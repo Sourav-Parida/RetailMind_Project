@@ -36,16 +36,11 @@ RANDOM_STATE = 42
 TEST_SIZE = 0.2
 
 
-def train_model(
-    data_path: str | Path = DATA_PATH,
-    model_path: str | Path = MODEL_PATH,
-) -> Tuple[Pipeline, pd.DataFrame, pd.Series]:
-    """Train the fixed baseline and return it with the held-out test data."""
-    df = load_data(data_path)
-    inspect_data(df)
-    df = clean_data(df)
-    X, y, numerical_columns, categorical_columns = split_features_target(df)
-
+def split_data(
+    X: pd.DataFrame,
+    y: pd.Series,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    """Create the reproducible stratified train/test split used across days."""
     class_counts = y.value_counts()
     if len(class_counts) != 2 or class_counts.min() < 2:
         raise ValueError(
@@ -60,7 +55,7 @@ def train_model(
             "both churn classes in the training and test sets."
         )
 
-    X_train, X_test, y_train, y_test = train_test_split(
+    return train_test_split(
         X,
         y,
         test_size=TEST_SIZE,
@@ -68,6 +63,12 @@ def train_model(
         stratify=y,
     )
 
+
+def build_preprocessor(
+    numerical_columns: list[str],
+    categorical_columns: list[str],
+) -> ColumnTransformer:
+    """Build the shared numeric and categorical preprocessing pipeline."""
     numerical_pipeline = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="median")),
@@ -77,21 +78,34 @@ def train_model(
     categorical_pipeline = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="most_frequent")),
-            (
-                "encoder",
-                OneHotEncoder(handle_unknown="ignore"),
-            ),
+            ("encoder", OneHotEncoder(handle_unknown="ignore")),
         ]
     )
-    preprocessor = ColumnTransformer(
+    return ColumnTransformer(
         transformers=[
             ("numerical", numerical_pipeline, numerical_columns),
             ("categorical", categorical_pipeline, categorical_columns),
         ]
     )
+
+
+def train_model(
+    data_path: str | Path = DATA_PATH,
+    model_path: str | Path = MODEL_PATH,
+) -> Tuple[Pipeline, pd.DataFrame, pd.Series]:
+    """Train the fixed baseline and return it with the held-out test data."""
+    df = load_data(data_path)
+    inspect_data(df)
+    df = clean_data(df)
+    X, y, numerical_columns, categorical_columns = split_features_target(df)
+
+    X_train, X_test, y_train, y_test = split_data(X, y)
     model = Pipeline(
         steps=[
-            ("preprocessor", preprocessor),
+            (
+                "preprocessor",
+                build_preprocessor(numerical_columns, categorical_columns),
+            ),
             (
                 "classifier",
                 LogisticRegression(

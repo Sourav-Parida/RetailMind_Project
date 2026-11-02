@@ -40,8 +40,9 @@ python src/predict.py
 `train.py` loads and inspects the data, cleans the target and charge columns,
 creates a stratified 80/20 split, trains the preprocessing/model pipeline, and
 saves it to `models/churn_pipeline.joblib`. `evaluate.py` trains the same fixed
-baseline and prints its held-out metrics. `predict.py` loads the saved pipeline
-and runs a sample prediction; run training first.
+baseline and prints its held-out metrics. `predict.py` loads the Day 2 champion
+pipeline and runs a sample prediction; run `python src/model_comparison.py`
+before predicting.
 
 The model artifact and downloaded CSV are excluded by `.gitignore`. Keep or
 publish them according to your dataset and artifact-storage policy.
@@ -97,6 +98,71 @@ features rather than silently accepting a mismatched record.
 6. **Why is recall important for churn?** Higher recall finds more customers
    who may leave, reducing missed retention opportunities. It should be
    balanced against precision and the cost of retention outreach.
+
+## Day 2 — Advanced churn model comparison
+
+### Objective
+
+Compare tree-based and margin-based classifiers with the Day 1 logistic
+regression baseline, prioritizing recall for customers who churn.
+
+### Experiment configuration
+
+- Test size: 20%
+- Random state: 42
+- Stratified sampling: enabled
+- Shared numeric/categorical preprocessing and held-out test data
+- Class weights: balanced
+- Champion priority: churn recall; ROC-AUC and precision break ties
+
+Run the comparison from the repository root:
+
+```shell
+python src/model_comparison.py
+python src/predict.py
+```
+
+The comparison retrains the Day 1 baseline and three Day 2 models on the same
+split, reports accuracy, precision, recall, and ROC-AUC, saves each complete
+pipeline, and writes the highest-recall pipeline to
+`models/champion_model.joblib`.
+
+### Models and artifacts
+
+| Model | Configuration | Artifact |
+|---|---|---|
+| Logistic Regression | Day 1 baseline; `class_weight="balanced"` | `models/churn_pipeline.joblib` |
+| Decision Tree | `max_depth=12`, balanced classes | `models/decision_tree.joblib` |
+| Random Forest | 200 trees, `max_depth=12`, balanced classes | `models/random_forest.joblib` |
+| SVM | RBF kernel, probability estimates, balanced classes | `models/svm.joblib` |
+| Champion | Highest recall; ROC-AUC then precision tie-breaks | `models/champion_model.joblib` |
+
+### Model comparison
+
+Run `python src/model_comparison.py` with the dataset to populate these
+experiment results. Values are not estimated because the dataset is not
+included in this repository.
+
+| Model | Accuracy | Precision | Recall | ROC-AUC |
+|---|---:|---:|---:|---:|
+| Logistic Regression (Day 1) | Not measured | Not measured | Not measured | Not measured |
+| Decision Tree | Not measured | Not measured | Not measured | Not measured |
+| Random Forest | Not measured | Not measured | Not measured | Not measured |
+| SVM | Not measured | Not measured | Not measured | Not measured |
+
+The champion is selected by churn-class recall. ROC-AUC and precision are used
+as tie-breakers. Accuracy alone does not determine the best model when the goal
+is to identify as many at-risk customers as possible.
+
+### Key concepts
+
+- A decision tree learns non-linear decision rules.
+- A random forest combines many decision trees to improve generalization.
+- An RBF-kernel SVM can model non-linear boundaries; probability estimates are
+  enabled to calculate ROC-AUC.
+- `class_weight="balanced"` increases the influence of the less frequent class.
+- Comparing all models on the same stratified split makes the metrics
+  comparable.
 
 ## Future development
 
