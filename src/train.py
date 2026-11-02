@@ -1,5 +1,6 @@
 """Train and persist the RetailMind customer churn prediction pipeline."""
 
+from math import ceil, floor
 from pathlib import Path
 from typing import Tuple
 
@@ -32,6 +33,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = PROJECT_ROOT / "data" / "telco_customer_churn.csv"
 MODEL_PATH = PROJECT_ROOT / "models" / "churn_pipeline.joblib"
 RANDOM_STATE = 42
+TEST_SIZE = 0.2
 
 
 def train_model(
@@ -50,11 +52,18 @@ def train_model(
             "Training requires both churn classes with at least two rows each "
             "to create a stratified train/test split."
         )
+    test_rows = ceil(len(y) * TEST_SIZE)
+    train_rows = floor(len(y) * (1 - TEST_SIZE))
+    if test_rows < 2 or train_rows < 2:
+        raise ValueError(
+            "The dataset is too small for a stratified 80/20 split containing "
+            "both churn classes in the training and test sets."
+        )
 
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y,
-        test_size=0.2,
+        test_size=TEST_SIZE,
         random_state=RANDOM_STATE,
         stratify=y,
     )
