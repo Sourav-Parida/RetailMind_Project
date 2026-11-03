@@ -1,81 +1,68 @@
-"""Load the persisted pipeline and predict churn for a customer."""
+"""Load the Day 3 champion and predict churn for new customer records."""
 
+import argparse
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Mapping
 
 import joblib
 import pandas as pd
-from sklearn.pipeline import Pipeline
 
-try:
-    from .train import MODEL_PATH
-except ImportError:
-    from train import MODEL_PATH
+from .data_preprocessing import DATA_DIR, MODEL_DIR, find_dataset
 
 
-def load_model(model_path: str | Path = MODEL_PATH) -> Pipeline:
-    """Load the saved scikit-learn pipeline."""
-    path = Path(model_path)
-    if not path.is_file():
-        raise FileNotFoundError(
-            f"Trained model not found at {path}. Run `python src/train.py` first."
-        )
-    return joblib.load(path)
+MODEL_PATH = MODEL_DIR / "churn_day3_tuned.joblib"
 
 
 def predict(
-    customer_data: Mapping[str, object],
+    customer_data: Mapping | pd.DataFrame,
     model_path: str | Path = MODEL_PATH,
-) -> dict[str, object]:
-    """Return a churn label and probability for one feature dictionary."""
-    model = load_model(model_path)
-    customer_df = pd.DataFrame([dict(customer_data)])
-
-    expected_columns = list(model.feature_names_in_)
-    missing_columns = sorted(set(expected_columns) - set(customer_df.columns))
-    extra_columns = sorted(set(customer_df.columns) - set(expected_columns))
-    if missing_columns or extra_columns:
-        problems = []
-        if missing_columns:
-            problems.append(f"missing features: {missing_columns}")
-        if extra_columns:
-            problems.append(f"unexpected features: {extra_columns}")
-        raise ValueError("Customer data has " + "; ".join(problems))
-
-    customer_df = customer_df.loc[:, expected_columns]
-    if "TotalCharges" in customer_df.columns:
-        customer_df["TotalCharges"] = pd.to_numeric(
-            customer_df["TotalCharges"], errors="coerce"
+) -> pd.DataFrame:
+    """Return churn labels and probabilities for one or more customer records."""
+    path = Path(model_path)
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"Model artifact not found: {path}. Run `python -m src.run_pipeline` first."
         )
-    prediction = int(model.predict(customer_df)[0])
-    probability = float(model.predict_proba(customer_df)[0, 1])
-    return {
-        "prediction": "Churn" if prediction == 1 else "No Churn",
-        "churn_probability": round(probability, 4),
-    }
+
+    if isinstance(customer_data, pd.DataFrame):
+        features = customer_data.copy()
+    elif isinstance(customer_data, Mapping):
+        features = pd.DataFrame([customer_data])
+    else:
+        raise TypeError("customer_data must be a mapping or pandas DataFrame.")
+
+    features = features.drop(columns=["customerID", "Churn"], errors="ignore")
+    if features.empty or features.shape[1] == 0:
+        raise ValueError("Provide at least one customer feature column.")
+    if "TotalCharges" in features.columns:
+        features["TotalCharges"] = pd.to_numeric(
+            features["TotalCharges"], errors="coerce"
+        )
+
+    model = joblib.load(path)
+    labels = model.predict(features)
+    probabilities = model.predict_proba(features)[:, 1]
+    return pd.DataFrame(
+        {
+            "predicted_churn": ["Yes" if label == 1 else "No" for label in labels],
+            "churn_probability": probabilities,
+        },
+        index=features.index,
+    )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Try the Day 3 model on the first row of the dataset."
+    )
+    parser.add_argument("--model", type=Path, default=MODEL_PATH)
+    parser.add_argument("--data", type=Path, default=None)
+    args = parser.parse_args()
+
+    data_path = args.data if args.data is not None else find_dataset(DATA_DIR)
+    sample = pd.read_csv(data_path, nrows=1)
+    print(predict(sample, args.model).to_string(index=False))
 
 
 if __name__ == "__main__":
-    example_customer = {
-        "gender": "Female",
-        "SeniorCitizen": 0,
-        "Partner": "Yes",
-        "Dependents": "No",
-        "tenure": 1,
-        "PhoneService": "No",
-        "MultipleLines": "No phone service",
-        "InternetService": "DSL",
-        "OnlineSecurity": "No",
-        "OnlineBackup": "Yes",
-        "DeviceProtection": "No",
-        "TechSupport": "No",
-        "StreamingTV": "No",
-        "StreamingMovies": "No",
-        "Contract": "Month-to-month",
-        "PaperlessBilling": "Yes",
-        "PaymentMethod": "Electronic check",
-        "MonthlyCharges": 29.85,
-        "TotalCharges": 29.85,
-    }
-    print("RetailMind Prediction:\n")
-    print(predict(example_customer))
+    main()

@@ -1,171 +1,76 @@
-# RetailMind AI
+# RetailMind AI — Customer Churn
 
-## Product vision
+RetailMind is a customer-churn prediction project built from the Telco Customer
+Churn dataset. It covers the notebook workflow through **Day 3 only**: a
+baseline, model comparison, and hyperparameter tuning with a learning curve.
+Day 4 is intentionally excluded.
 
-RetailMind AI is an end-to-end retail intelligence platform that uses machine
-learning and AI to help businesses understand customers, predict churn, and
-improve customer retention.
+## Project structure
 
-## Day 1 — Customer churn prediction
-
-### Objective
-
-Build an end-to-end machine-learning pipeline to predict whether a telecom
-customer is likely to leave the company.
-
-### Dataset
-
-Use the [Telco Customer Churn dataset on Kaggle](https://www.kaggle.com/datasets/blastchar/telco-customer-churn).
-Download the CSV and place it at `data/telco_customer_churn.csv`. The dataset is
-not included in this repository.
-
-### Technologies
-
-- Python
-- Pandas
-- Scikit-learn
-- Joblib
-
-### Setup and execution
-
-Run these commands from the repository root:
-
-```shell
-pip install -r requirements.txt
-python src/train.py
-python src/evaluate.py
-python src/predict.py
+```text
+data/          Downloaded dataset (not committed)
+models/        Saved Day 1–3 model pipelines
+notebooks/     RetailMind_Churn_Days_1_to_4.ipynb (Days 1–3 sections only)
+reports/       Evaluation tables and the Day 3 learning curve
+src/           Reusable data, training, evaluation, and prediction code
 ```
 
-`train.py` loads and inspects the data, cleans the target and charge columns,
-creates a stratified 80/20 split, trains the preprocessing/model pipeline, and
-saves it to `models/churn_pipeline.joblib`. `evaluate.py` trains the same fixed
-baseline and prints its held-out metrics. `predict.py` loads the Day 2 champion
-pipeline and runs a sample prediction; run `python src/model_comparison.py`
-before predicting.
+## Setup
 
-The model artifact and downloaded CSV are excluded by `.gitignore`. Keep or
-publish them according to your dataset and artifact-storage policy.
+Download the [Telco Customer Churn dataset](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
+and place its CSV in `data/`. The project recognizes these filenames:
 
-### ML workflow
+- `Telco-Customer-Churn.csv`
+- `WA_Fn-UseC_-Telco-Customer-Churn.csv`
+- `telco_customer_churn.csv`
 
-1. Data ingestion and inspection
-2. Identifier removal and target/charge cleaning
-3. Numeric imputation and scaling; categorical imputation and one-hot encoding
-4. Stratified train/test split
-5. Class-balanced logistic regression training
-6. Evaluation and model persistence
-7. Prediction with the persisted preprocessing/model pipeline
-
-### Baseline model and metrics
-
-The baseline is logistic regression with `class_weight="balanced"`,
-`max_iter=1000`, a 20% stratified test split, and random state 42. Keep these
-settings fixed when comparing baseline results.
-
-| Metric | Baseline |
-|---|---:|
-| Accuracy | Not yet measured |
-| Precision | Not yet measured |
-| Recall | Not yet measured |
-| ROC-AUC | Not yet measured |
-
-After running `python src/evaluate.py` with the dataset, record the four printed
-values above. They are intentionally not estimated because no dataset was
-provided with this repository.
-
-### Prediction service
-
-`src.predict.predict()` accepts a dictionary containing the dataset's feature
-columns (without `customerID` or `Churn`) and returns a prediction (`Churn` or
-`No Churn`) and churn probability. It reports missing or unexpected input
-features rather than silently accepting a mismatched record.
-
-### Key concepts
-
-1. **Why `ColumnTransformer`?** It applies numeric and categorical
-   preprocessing to their respective columns within one estimator.
-2. **Why `Pipeline`?** It keeps preprocessing and the classifier together,
-   applies the same transformations at training and inference, and helps
-   prevent data leakage by fitting transformations only on training data.
-3. **Why `stratify=y`?** It preserves the churn/non-churn proportions in both
-   train and test splits.
-4. **`predict()` vs `predict_proba()`:** `predict()` returns a class label;
-   `predict_proba()` returns estimated probabilities for each class.
-5. **Why save the whole pipeline?** The persisted artifact includes both the
-   fitted preprocessing and classifier, so inference uses the same learned
-   transformations.
-6. **Why is recall important for churn?** Higher recall finds more customers
-   who may leave, reducing missed retention opportunities. It should be
-   balanced against precision and the cost of retention outreach.
-
-## Day 2 — Advanced churn model comparison
-
-### Objective
-
-Compare tree-based and margin-based classifiers with the Day 1 logistic
-regression baseline, prioritizing recall for customers who churn.
-
-### Experiment configuration
-
-- Test size: 20%
-- Random state: 42
-- Stratified sampling: enabled
-- Shared numeric/categorical preprocessing and held-out test data
-- Class weights: balanced
-- Champion priority: churn recall; ROC-AUC and precision break ties
-
-Run the comparison from the repository root:
+Install the requirements:
 
 ```shell
-python src/model_comparison.py
-python src/predict.py
+python -m pip install -r requirements.txt
 ```
 
-The comparison retrains the Day 1 baseline and three Day 2 models on the same
-split, reports accuracy, precision, recall, and ROC-AUC, saves each complete
-pipeline, and writes the highest-recall pipeline to
-`models/champion_model.joblib`.
+## Run the project
 
-### Models and artifacts
+Run all three stages from the repository root:
 
-| Model | Configuration | Artifact |
-|---|---|---|
-| Logistic Regression | Day 1 baseline; `class_weight="balanced"` | `models/churn_pipeline.joblib` |
-| Decision Tree | `max_depth=12`, balanced classes | `models/decision_tree.joblib` |
-| Random Forest | 200 trees, `max_depth=12`, balanced classes | `models/random_forest.joblib` |
-| SVM | RBF kernel, probability estimates, balanced classes | `models/svm.joblib` |
-| Champion | Highest recall; ROC-AUC then precision tie-breaks | `models/champion_model.joblib` |
+```shell
+python -m src.run_pipeline
+```
 
-### Model comparison
+You can optionally provide a CSV path:
 
-Run `python src/model_comparison.py` with the dataset to populate these
-experiment results. Values are not estimated because the dataset is not
-included in this repository.
+```shell
+python -m src.run_pipeline --data path\to\Telco-Customer-Churn.csv
+```
 
-| Model | Accuracy | Precision | Recall | ROC-AUC |
-|---|---:|---:|---:|---:|
-| Logistic Regression (Day 1) | Not measured | Not measured | Not measured | Not measured |
-| Decision Tree | Not measured | Not measured | Not measured | Not measured |
-| Random Forest | Not measured | Not measured | Not measured | Not measured |
-| SVM | Not measured | Not measured | Not measured | Not measured |
+The workflow uses one stratified 80/20 split with random state 42. Days 2 and 3
+select models using three-fold cross-validation on the training partition.
+The held-out test partition is reserved for reporting final metrics.
 
-The champion is selected by churn-class recall. ROC-AUC and precision are used
-as tie-breakers. Accuracy alone does not determine the best model when the goal
-is to identify as many at-risk customers as possible.
+Run individual stages with:
 
-### Key concepts
+```shell
+python -m src.train
+python -m src.model_comparison
+python -m src.hyperparameter_tuning
+python -m src.evaluate
+python -m src.predict
+```
 
-- A decision tree learns non-linear decision rules.
-- A random forest combines many decision trees to improve generalization.
-- An RBF-kernel SVM can model non-linear boundaries; probability estimates are
-  enabled to calculate ROC-AUC.
-- `class_weight="balanced"` increases the influence of the less frequent class.
-- Comparing all models on the same stratified split makes the metrics
-  comparable.
+`src.predict.predict(customer_data)` accepts a mapping for one customer or a
+DataFrame for multiple customers. It returns `predicted_churn` (`Yes` or `No`)
+and `churn_probability` using the Day 3 tuned pipeline.
 
-## Future development
+## Workflow
 
-RetailMind AI will incrementally evolve into a complete retail AI platform
-with additional machine-learning models, analytics, and deployment
-capabilities.
+- **Day 1 — Baseline:** class-balanced Logistic Regression with numeric
+  imputation/scaling and categorical imputation/one-hot encoding.
+- **Day 2 — Model comparison:** Decision Tree, Random Forest, and RBF SVM;
+  the champion is chosen by mean cross-validation recall.
+- **Day 3 — Tuning:** GridSearchCV for those candidates, final test metrics,
+  and a recall learning curve.
+
+Churn `Yes` is the positive class. Downloaded data and generated model files
+are excluded by Git. Do not publish the raw dataset unless its license and
+repository policy allow it.
