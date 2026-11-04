@@ -41,11 +41,11 @@ def evaluate_classifier(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Evaluate the Day 3 churn model.")
+    parser = argparse.ArgumentParser(description="Evaluate the Day 4 churn model.")
     parser.add_argument(
         "--model",
         type=Path,
-        default=MODEL_DIR / "churn_day3_tuned.joblib",
+        default=MODEL_DIR / "churn_day4_champion.joblib",
         help="Path to a saved model pipeline.",
     )
     args = parser.parse_args()

@@ -38,7 +38,7 @@ def train_baseline(
     joblib.dump(model, model_dir / "churn_day1_baseline.joblib")
 
     metrics = evaluate_classifier(
-        "Day 1 — Logistic Regression baseline", model, X_test, y_test
+        "Day 1 - Logistic Regression baseline", model, X_test, y_test
     )
     pd.DataFrame([metrics]).to_csv(
         report_dir / "day1_baseline_metrics.csv", index=False

@@ -1,8 +1,8 @@
 # RetailMind AI — Churn Prediction
 
-This project develops a Telco customer churn workflow through **Day 3 only**:
-baseline training, candidate comparison, and hyperparameter tuning. Day 4 is
-intentionally not included.
+This project develops a Telco customer churn workflow through **Day 4**:
+baseline training, candidate comparison, hyperparameter tuning, feature
+engineering, and ensemble selection.
 
-See [README.md](README.md) for setup instructions, runnable commands, the
-project structure, and the complete Day 1–3 workflow.
+See [README.md](README.md) for setup instructions, runnable commands, and the
+complete project workflow.

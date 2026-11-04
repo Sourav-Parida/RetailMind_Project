@@ -10,7 +10,7 @@ import pandas as pd
 from data_preprocessing import DATA_DIR, MODEL_DIR, find_dataset
 
 
-MODEL_PATH = MODEL_DIR / "churn_day3_tuned.joblib"
+MODEL_PATH = MODEL_DIR / "churn_day4_champion.joblib"
 
 
 def predict(
@@ -53,7 +53,7 @@ def predict(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Try the Day 3 model on the first row of the dataset."
+        description="Try the Day 4 model on the first row of the dataset."
     )
     parser.add_argument("--model", type=Path, default=MODEL_PATH)
     parser.add_argument("--data", type=Path, default=None)
