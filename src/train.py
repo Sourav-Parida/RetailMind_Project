@@ -4,14 +4,14 @@ import joblib
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
-from .data_preprocessing import (
+from data_preprocessing import (
     MODEL_DIR,
     RANDOM_STATE,
     REPORT_DIR,
     get_train_test_data,
     make_model_pipeline,
 )
-from .evaluate import evaluate_classifier
+from evaluate import evaluate_classifier
 
 
 def train_baseline(

@@ -12,7 +12,7 @@ from sklearn.model_selection import GridSearchCV, learning_curve
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from .data_preprocessing import (
+from data_preprocessing import (
     MODEL_DIR,
     RANDOM_STATE,
     REPORT_DIR,
@@ -20,7 +20,7 @@ from .data_preprocessing import (
     make_cv,
     make_model_pipeline,
 )
-from .evaluate import evaluate_classifier
+from evaluate import evaluate_classifier
 
 
 def tune_models(
@@ -66,6 +66,7 @@ def tune_models(
     best_models = {}
     rows = []
     cv = make_cv()
+    
     for name, (estimator, parameter_grid) in search_spaces.items():
         print(f"Running Day 3 grid search for {name}...")
         search = GridSearchCV(

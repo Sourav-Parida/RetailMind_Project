@@ -9,7 +9,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from .data_preprocessing import (
+from data_preprocessing import (
     MODEL_DIR,
     RANDOM_STATE,
     REPORT_DIR,
@@ -17,7 +17,7 @@ from .data_preprocessing import (
     make_cv,
     make_model_pipeline,
 )
-from .evaluate import evaluate_classifier
+from evaluate import evaluate_classifier
 
 
 def compare_models(

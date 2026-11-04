@@ -2,10 +2,10 @@
 
 import argparse
 
-from .data_preprocessing import get_train_test_data
-from .hyperparameter_tuning import tune_models
-from .model_comparison import compare_models
-from .train import train_baseline
+from data_preprocessing import get_train_test_data
+from hyperparameter_tuning import tune_models
+from model_comparison import compare_models
+from train import train_baseline
 
 
 def main() -> None:

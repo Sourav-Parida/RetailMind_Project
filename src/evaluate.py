@@ -14,7 +14,7 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
-from .data_preprocessing import MODEL_DIR, get_train_test_data
+from data_preprocessing import MODEL_DIR, get_train_test_data
 
 
 def evaluate_classifier(
