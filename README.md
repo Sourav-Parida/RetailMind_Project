@@ -1,17 +1,18 @@
 # RetailMind AI — Customer Churn
 
 RetailMind is a customer-churn prediction project built from the Telco Customer
-Churn dataset. It implements four stages: a baseline, model comparison,
-hyperparameter tuning, and feature-engineered ensemble selection.
+Churn dataset. It currently implements five stages: baseline, model comparison,
+hyperparameter tuning, feature-engineered ensemble selection, and a Keras ANN
+benchmark.
 
 ## Project structure
 
 ```text
 
 data/          Downloaded dataset
-models/        Saved Day 1–4 model pipelines
-notebooks/     
-reports/       Evaluation tables and the Day 3 learning curve
+models/        Saved Day 1–5 model pipelines
+notebooks/     Day 1–4 lessons and the Day 5 ANN lesson
+reports/       Evaluation tables, learning curves, and Day 5 comparison
 src/           Reusable data, training, evaluation, and prediction code
 
 ```
@@ -36,7 +37,7 @@ Random Forest candidate runs without it.
 
 ## Run the project
 
-Run all four stages from the repository root:
+Run all five stages from the repository root:
 
 ```shell
 python -m src.run_pipeline
@@ -50,7 +51,8 @@ python -m src.run_pipeline --data path\to\Telco-Customer-Churn.csv
 
 The workflow uses one stratified 80/20 split with random state 42. Days 2–4
 select candidates using three-fold cross-validation on the training partition.
-The held-out test partition is reserved for reporting final metrics.
+The Day 5 ANN uses an internal validation split and early stopping. The held-out
+test partition is reserved for reporting final metrics and the Day 4/5 benchmark.
 
 Run an individual stage with:
 
@@ -59,6 +61,7 @@ python -m src.train
 python -m src.model_comparison
 python -m src.hyperparameter_tuning
 python -m src.day4_ensemble
+python -m src.day5_ann
 python -m src.evaluate
 python -m src.predict
 ```
@@ -67,6 +70,10 @@ python -m src.predict
 DataFrame for multiple customers. It returns `predicted_churn` (`Yes` or `No`)
 and `churn_probability` using the Day 4 champion. Run the full pipeline first
 to create that model artifact.
+
+The Day 5 ANN can be run after Day 4 with `python -m src.day5_ann`. Its Keras
+model and preprocessing metadata are saved separately from the classical
+prediction pipeline.
 
 ## Workflow
 
@@ -83,6 +90,30 @@ to create that model artifact.
   charges, contract/payment indicators, `SelectKBest`, and Random Forest
   (plus optional XGBoost). The Day 4 pipeline includes feature engineering,
   preprocessing, and selection so predictions use the same transformations.
+
+- **Day 5 — Neural network benchmark:** a Keras ANN normalizes numeric inputs,
+  encodes categories with `StringLookup`, and trains two hidden layers with
+  early stopping on validation loss. It is compared with the Day 4 classical
+  champion on the same held-out split. The model is saved as
+  `models/churn_day5_ann.keras`; its category vocabularies and numeric
+  imputation values are saved alongside it.
+
+## When to use which model
+
+The ANN is an experiment, not an automatic promotion. For this modest,
+structured Telco dataset, the Day 4 Random Forest/SVM may be preferable when
+they match or beat ANN quality: they are easier to train, need fewer runtime
+dependencies, and are simpler to inspect. Consider the ANN when repeated
+validation evidence shows a useful lift, or when the product has enough
+tabular data/scale to justify neural-network training and serving. Compare
+recall, precision, ROC-AUC, training cost, and operational needs—not depth
+alone—and keep the same held-out test set out of model selection.
+
+On the current fixed split at a 0.5 threshold, the ANN reached 0.841 ROC-AUC
+and 0.794 accuracy versus 0.826 and 0.774 for the Day 4 champion, but its churn
+recall was lower (0.559 versus 0.623) and its F1 was similar (0.590 versus
+0.594). That is a trade-off, not an across-the-board win; the comparison is
+recorded in `reports/day5_ann_vs_classical.csv`.
 
 Churn `Yes` is the positive class. Downloaded data and generated model files
 are excluded by Git. Do not publish the raw dataset unless its license and

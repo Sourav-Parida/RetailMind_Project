@@ -7,5 +7,7 @@ data/Telco-Customer-Churn.csv
 data/WA_Fn-UseC_-Telco-Customer-Churn.csv
 data/telco_customer_churn.csv
 models/*.joblib
+models/*.keras
+models/*_preprocessing.json
 reports/*.csv
 reports/*.png
