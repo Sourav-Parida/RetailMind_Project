@@ -1,18 +1,17 @@
 # RetailMind AI — Customer Churn
 
-RetailMind is a customer-churn prediction project built from the Telco Customer
-Churn dataset. It currently implements five stages: baseline, model comparison,
-hyperparameter tuning, feature-engineered ensemble selection, and a Keras ANN
-benchmark.
+RetailMind is an incrementally built retail AI project. Days 1–5 develop the
+customer-churn workflow; Day 6 adds a separate TensorFlow/Keras image
+classification module for product catalog auto-tagging.
 
 ## Project structure
 
 ```text
 
 data/          Downloaded dataset
-models/        Saved Day 1–5 model pipelines
-notebooks/     Day 1–4 lessons and the Day 5 ANN lesson
-reports/       Evaluation tables, learning curves, and Day 5 comparison
+models/        Saved Day 1–6 model artifacts
+notebooks/     Day 1–6 project lessons
+reports/       Evaluation tables, learning curves, ANN results, and CNN results
 src/           Reusable data, training, evaluation, and prediction code
 
 ```
@@ -75,6 +74,24 @@ The Day 5 ANN can be run after Day 4 with `python -m src.day5_ann`. Its Keras
 model and preprocessing metadata are saved separately from the classical
 prediction pipeline.
 
+Run both Day 6 models directly from the repository root:
+
+```shell
+python src\day6_cnn.py
+```
+
+The script trains Fashion-MNIST first and then the catalog classifier using
+`data\fashion-product-images-small\`. To run only one model, comment out the
+other training call in the `if __name__ == "__main__":` block at the bottom of
+`src/day6_cnn.py`.
+
+The Fashion-MNIST prototype is saved to `models/day6_fashion_mnist_cnn.keras`.
+The product catalog model is saved to `models/day6_product_catalog_cnn.keras`.
+Both modes save test accuracy and a confusion matrix under `reports/`. Product
+labels use the dataset's `articleType` column; classes with fewer than three
+available images are excluded so each split can include that class.
+The downloaded catalog folder is Git-ignored and will not be added to commits.
+
 ## Workflow
 
 - **Day 1 — Baseline:** class-balanced Logistic Regression with numeric
@@ -114,6 +131,19 @@ and 0.794 accuracy versus 0.826 and 0.774 for the Day 4 champion, but its churn
 recall was lower (0.559 versus 0.623) and its F1 was similar (0.590 versus
 0.594). That is a trade-off, not an across-the-board win; the comparison is
 recorded in `reports/day5_ann_vs_classical.csv`.
+
+## Day 6 — CNN image classification
+
+The CNN uses Fashion-MNIST to validate the image model workflow and supports
+training on the Kaggle Fashion Product Images Small catalog. Product images
+are resized and augmented during training; the held-out catalog test split is
+evaluated with accuracy and a confusion matrix. Record the catalog test
+accuracy here after running the catalog training command: **not yet measured**
+(the Kaggle product-image dataset is local-only and Git-ignored).
+
+The Fashion-MNIST prototype reached **86.38% test accuracy** after three
+training epochs on the standard 10,000-image test set. This validates the CNN
+workflow only; it is not the accuracy of the catalog classifier.
 
 Churn `Yes` is the positive class. Downloaded data and generated model files
 are excluded by Git. Do not publish the raw dataset unless its license and

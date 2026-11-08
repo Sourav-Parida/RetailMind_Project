@@ -6,8 +6,11 @@ venv/
 data/Telco-Customer-Churn.csv
 data/WA_Fn-UseC_-Telco-Customer-Churn.csv
 data/telco_customer_churn.csv
+data/fashion-product-images-small/
+data/.kagglehub/
 models/*.joblib
 models/*.keras
 models/*_preprocessing.json
+models/*_classes.json
 reports/*.csv
 reports/*.png
