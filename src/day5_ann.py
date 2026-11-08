@@ -2,7 +2,6 @@
 
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -92,7 +91,6 @@ def build_ann(
         model_inputs["numeric_features"] = numeric_input
 
     for column in categorical_columns:
-        safe_name = re.sub(r"[^a-zA-Z0-9_]", "_", column)
         categorical_input = tf.keras.Input(
             shape=(),
             name=column,
@@ -100,7 +98,7 @@ def build_ann(
         )
         lookup = tf.keras.layers.StringLookup(
             output_mode="one_hot",
-            name=f"{safe_name}_lookup",
+            name=f"{column}_lookup",
         )
         lookup.adapt(training_inputs[column])
         encoded_features.append(lookup(categorical_input))
