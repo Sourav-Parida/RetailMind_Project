@@ -10,6 +10,7 @@ data/fashion-product-images-small/
 data/.kagglehub/
 models/*.joblib
 models/*.keras
+models/vision_confusion_matrix.csv
 models/*_preprocessing.json
 models/*_classes.json
 reports/*.csv

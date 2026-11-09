@@ -74,23 +74,27 @@ The Day 5 ANN can be run after Day 4 with `python -m src.day5_ann`. Its Keras
 model and preprocessing metadata are saved separately from the classical
 prediction pipeline.
 
-Run both Day 6 models directly from the repository root:
+Run the Day 6 sections from the repository root:
 
 ```shell
 python src\day6_cnn.py
 ```
 
-The script trains Fashion-MNIST first and then the catalog classifier using
-`data\fashion-product-images-small\`. To run only one model, comment out the
-other training call in the `if __name__ == "__main__":` block at the bottom of
-`src/day6_cnn.py`.
+The Fashion-MNIST section runs by default. To train the catalog model too,
+uncomment its call in the `if __name__ == "__main__":` block at the bottom of
+`src/day6_cnn.py`. Both training sections and the prediction function are
+implemented in that same file.
 
-The Fashion-MNIST prototype is saved to `models/day6_fashion_mnist_cnn.keras`.
-The product catalog model is saved to `models/day6_product_catalog_cnn.keras`.
-Both modes save test accuracy and a confusion matrix under `reports/`. Product
-labels use the dataset's `articleType` column; classes with fewer than three
-available images are excluded so each split can include that class.
-The downloaded catalog folder is Git-ignored and will not be added to commits.
+The Fashion-MNIST prototype is saved to
+`models/fashion_mnist_prototype.keras`. The product catalog model and its class
+labels are saved to `models/vision_catalog_classifier.keras` and
+`models/vision_class_names.json`; its confusion matrix is saved to
+`models/vision_confusion_matrix.csv`. Catalog labels use the dataset's
+`articleType` column, and categories with fewer than three available images
+are excluded. To classify one image after training, run
+`predict_catalog_image(image_path)` from `src/day6_cnn.py`, or uncomment the
+example call at the bottom of that file. The downloaded catalog folder is
+Git-ignored and will not be added to commits.
 
 ## Workflow
 
