@@ -1,7 +1,6 @@
-"""Day 6 CNN training and product-image prediction.
+"""Train both Day 6 image classifiers and predict product categories.
 
-Run from the repository root with ``python src/day6_cnn.py``. Uncomment the
-catalog training call at the bottom to train on the product image dataset.
+Run from the repository root with ``python src/day6_cnn.py``.
 """
 
 import csv
@@ -16,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data" / "fashion-product-images-small"
 MODEL_DIR = ROOT / "models"
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
+REPORT_DIR = ROOT / "reports"
 
 IMAGE_SIZE = (128, 128)
 BATCH_SIZE = 32
@@ -23,9 +23,12 @@ EPOCHS = 12
 SEED = 42
 AUTOTUNE = tf.data.AUTOTUNE
 FASHION_MODEL_PATH = MODEL_DIR / "fashion_mnist_prototype.keras"
-CATALOG_MODEL_PATH = MODEL_DIR / "vision_catalog_classifier.keras"
-CLASS_NAMES_PATH = MODEL_DIR / "vision_class_names.json"
-CONFUSION_MATRIX_PATH = MODEL_DIR / "vision_confusion_matrix.csv"
+FASHION_METRICS_PATH = REPORT_DIR / "day6_fashion_mnist_metrics.csv"
+FASHION_CONFUSION_MATRIX_PATH = REPORT_DIR / "day6_fashion_mnist_confusion_matrix.csv"
+CATALOG_MODEL_PATH = MODEL_DIR / "vision_master_category_classifier.keras"
+CLASS_NAMES_PATH = MODEL_DIR / "vision_master_category_class_names.json"
+CONFUSION_MATRIX_PATH = MODEL_DIR / "vision_master_category_confusion_matrix.csv"
+CATALOG_METRICS_PATH = REPORT_DIR / "day6_master_category_metrics.csv"
 
 FASHION_CLASS_NAMES = [
     "T-shirt/top",
@@ -65,6 +68,7 @@ def build_fashion_mnist_model():
 
 
 def train_fashion_mnist():
+    tf.keras.utils.set_random_seed(SEED)
     (x_train, y_train), (x_test, y_test) = (
         tf.keras.datasets.fashion_mnist.load_data()
     )
@@ -73,7 +77,7 @@ def train_fashion_mnist():
 
     model = build_fashion_mnist_model()
     model.summary()
-    model.fit(
+    history = model.fit(
         x_train,
         y_train,
         validation_split=0.1,
@@ -89,18 +93,49 @@ def train_fashion_mnist():
     test_loss, test_accuracy = model.evaluate(x_test, y_test, verbose=0)
     print(f"Fashion-MNIST test loss: {test_loss:.4f}")
     print(f"Fashion-MNIST test accuracy: {test_accuracy:.4f}")
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    with FASHION_METRICS_PATH.open("w", encoding="utf-8", newline="") as file:
+        writer = csv.DictWriter(
+            file,
+            fieldnames=[
+                "dataset",
+                "test_loss",
+                "test_accuracy",
+                "epochs_trained",
+                "class_count",
+            ],
+        )
+        writer.writeheader()
+        writer.writerow({
+            "dataset": "fashion_mnist",
+            "test_loss": f"{test_loss:.6f}",
+            "test_accuracy": f"{test_accuracy:.6f}",
+            "epochs_trained": len(history.epoch),
+            "class_count": len(FASHION_CLASS_NAMES),
+        })
     model.save(FASHION_MODEL_PATH)
     print(f"Saved prototype model: {FASHION_MODEL_PATH}")
 
     predictions = tf.argmax(model.predict(x_test, verbose=0), axis=1)
-    matrix = tf.math.confusion_matrix(y_test, predictions, num_classes=10)
+    matrix = tf.math.confusion_matrix(
+        y_test, predictions, num_classes=len(FASHION_CLASS_NAMES)
+    ).numpy()
+    with FASHION_CONFUSION_MATRIX_PATH.open(
+        "w", encoding="utf-8", newline=""
+    ) as file:
+        writer = csv.writer(file)
+        writer.writerow(["true/predicted"] + FASHION_CLASS_NAMES)
+        for class_name, row in zip(FASHION_CLASS_NAMES, matrix):
+            writer.writerow([class_name] + row.tolist())
     print("Fashion-MNIST confusion matrix (rows=true, columns=predicted):")
-    print(matrix.numpy())
+    print(matrix)
     print("Class order:", FASHION_CLASS_NAMES)
+    print(f"Saved test metrics: {FASHION_METRICS_PATH}")
+    print(f"Saved confusion matrix: {FASHION_CONFUSION_MATRIX_PATH}")
 
 
 def load_catalog_records():
-    """Read image paths and articleType labels from the catalog CSV."""
+    """Read image paths and masterCategory labels from the catalog CSV."""
     csv_path = DATA_DIR / "styles.csv"
     if not csv_path.is_file():
         csv_path = DATA_DIR / "myntradataset" / "styles.csv"
@@ -116,15 +151,15 @@ def load_catalog_records():
     records = []
     with csv_path.open("r", encoding="utf-8", newline="") as file:
         reader = csv.DictReader(file)
-        required = {"id", "articleType"}
+        required = {"id", "masterCategory"}
         if not reader.fieldnames or not required.issubset(reader.fieldnames):
             raise ValueError(
-                "styles.csv must contain columns: id and articleType. "
+                "styles.csv must contain columns: id and masterCategory. "
                 f"Found: {reader.fieldnames}"
             )
         for row in reader:
             image_id = (row.get("id") or "").strip()
-            label = (row.get("articleType") or "").strip()
+            label = (row.get("masterCategory") or "").strip()
             if not image_id or not label:
                 continue
             image_path = image_dir / f"{image_id}.jpg"
@@ -244,10 +279,35 @@ def build_catalog_model(number_of_classes):
     return model
 
 
+def save_catalog_metrics(test_loss, test_accuracy, epochs_trained, class_count):
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    with CATALOG_METRICS_PATH.open("w", encoding="utf-8", newline="") as file:
+        writer = csv.DictWriter(
+            file,
+            fieldnames=[
+                "dataset",
+                "test_loss",
+                "test_accuracy",
+                "epochs_trained",
+                "class_count",
+            ],
+        )
+        writer.writeheader()
+        writer.writerow({
+            "dataset": "fashion_product_master_category",
+            "test_loss": f"{test_loss:.6f}",
+            "test_accuracy": f"{test_accuracy:.6f}",
+            "epochs_trained": epochs_trained,
+            "class_count": class_count,
+        })
+
+
 def train_catalog():
     records = load_catalog_records()
     print(f"Usable images: {len(records)}")
-    (train_data, val_data, test_data, class_names) = split_catalog_records(records)
+    (train_data, val_data, test_data, class_names) = split_catalog_records(
+        records
+    )
     train_paths, train_labels = train_data
     val_paths, val_labels = val_data
     test_paths, test_labels = test_data
@@ -262,7 +322,7 @@ def train_catalog():
     test_ds = make_catalog_dataset(test_paths, test_labels)
     model = build_catalog_model(len(class_names))
     model.summary()
-    model.fit(
+    history = model.fit(
         train_ds,
         validation_data=val_ds,
         epochs=EPOCHS,
@@ -282,6 +342,12 @@ def train_catalog():
     test_loss, test_accuracy = model.evaluate(test_ds, verbose=1)
     print(f"Catalog test loss: {test_loss:.4f}")
     print(f"Catalog test accuracy: {test_accuracy:.4f}")
+    save_catalog_metrics(
+        test_loss,
+        test_accuracy,
+        len(history.epoch),
+        len(class_names),
+    )
 
     y_true = tf.constant(test_labels, dtype=tf.int32)
     probabilities = model.predict(test_ds, verbose=1)
@@ -300,38 +366,89 @@ def train_catalog():
     print(f"Saved model: {CATALOG_MODEL_PATH}")
     print(f"Saved class labels: {CLASS_NAMES_PATH}")
     print(f"Saved confusion matrix: {CONFUSION_MATRIX_PATH}")
+    print(f"Saved test metrics: {CATALOG_METRICS_PATH}")
 
 
-def predict_catalog_image(image_path):
-    """Print the predicted catalog category and confidence for an image."""
+def load_catalog_model():
+    """Load the master-category model and its matching category names."""
+    if not CATALOG_MODEL_PATH.is_file():
+        raise FileNotFoundError(
+            f"Trained model not found: {CATALOG_MODEL_PATH}\n"
+            "Train the catalog model first by running python src/day6_cnn.py"
+        )
+    if not CLASS_NAMES_PATH.is_file():
+        raise FileNotFoundError(f"Class names file not found: {CLASS_NAMES_PATH}")
+
+    model = tf.keras.models.load_model(CATALOG_MODEL_PATH)
+    with CLASS_NAMES_PATH.open("r", encoding="utf-8") as file:
+        class_names = json.load(file)
+    if model.output_shape[-1] != len(class_names):
+        raise ValueError("Model output classes do not match class names.")
+    return model, class_names
+
+
+def preprocess_catalog_image(image_path):
+    """Resize one image for the catalog model; model includes rescaling."""
     image_path = Path(image_path)
     if not image_path.is_absolute():
         image_path = (ROOT / image_path).resolve()
     if not image_path.is_file():
         raise FileNotFoundError(f"Image not found: {image_path}")
-    if not CATALOG_MODEL_PATH.is_file() or not CLASS_NAMES_PATH.is_file():
-        raise FileNotFoundError(
-            "Train the catalog classifier first. Expected model and class "
-            "labels in the models/ directory."
-        )
+    image = tf.io.decode_image(
+        tf.io.read_file(str(image_path)),
+        channels=3,
+        expand_animations=False,
+    )
+    image = tf.image.resize(image, IMAGE_SIZE)
+    return tf.expand_dims(tf.cast(image, tf.float32), axis=0)
 
-    model = tf.keras.models.load_model(CATALOG_MODEL_PATH)
-    with CLASS_NAMES_PATH.open("r", encoding="utf-8") as file:
-        class_names = json.load(file)
-    image = tf.keras.utils.load_img(image_path, target_size=IMAGE_SIZE)
-    array = tf.keras.utils.img_to_array(image)
-    probabilities = model.predict(tf.expand_dims(array, axis=0), verbose=0)[0]
-    best_index = int(tf.argmax(probabilities))
-    print(f"Predicted category: {class_names[best_index]}")
-    print(f"Confidence: {probabilities[best_index]:.2%}")
+
+def predict_category(model, class_names, image_path):
+    """Print and return the top three master-category predictions."""
+    image = preprocess_catalog_image(image_path)
+    probabilities = model.predict(image, verbose=0)[0]
+    top_indices = probabilities.argsort()[::-1][:min(3, len(class_names))]
+    predicted_index = int(top_indices[0])
+    predicted_category = class_names[predicted_index]
+    confidence = float(probabilities[predicted_index])
+
+    print("\n" + "=" * 45)
+    print("       RETAILMIND CATEGORY PREDICTION")
+    print("=" * 45)
+    print(f"\nImage: {image_path}")
+    print(f"\nPredicted Master Category: {predicted_category}")
+    print(f"Confidence: {confidence * 100:.2f}%")
+    print("\nTop predictions:")
+    for rank, index in enumerate(top_indices, start=1):
+        category = class_names[int(index)]
+        score = float(probabilities[index]) * 100
+        print(f"{rank}. {category}: {score:.2f}%")
+    print("\n" + "=" * 45)
+    return predicted_category, confidence
+
+
+def predict_catalog_image(image_path):
+    """Load the trained model and predict one image's master category."""
+    model, class_names = load_catalog_model()
+    return predict_category(model, class_names, image_path)
+
+
+def main():
+    image_path = None
+    # Uncomment and set an image path to predict instead of training:
+    # image_path = r"data\fashion-product-images-small\images\15970.jpg"
+
+    if image_path is not None:
+        catalog_model, catalog_class_names = load_catalog_model()
+        predict_category(catalog_model, catalog_class_names, image_path)
+        return
+
+    print("=== Fashion-MNIST CNN ===")
+    train_fashion_mnist()
+
+    print("=== Product catalog master-category CNN ===")
+    train_catalog()
 
 
 if __name__ == "__main__":
-    # print("=== Fashion-MNIST CNN ===")
-    # train_fashion_mnist()
-
-    print("=== Product catalog CNN ===")
-    train_catalog()
-
-    # After training the catalog model, pass an image path to this function:
-    # predict_catalog_image(DATA_DIR / "images" / "15970.jpg")
+    main()

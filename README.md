@@ -1,154 +1,371 @@
-# RetailMind AI — Customer Churn
+# RetailMind AI
 
-RetailMind is an incrementally built retail AI project. Days 1–5 develop the
-customer-churn workflow; Day 6 adds a separate TensorFlow/Keras image
-classification module for product catalog auto-tagging.
+RetailMind is a learning project built one step at a time. It has two parts:
 
-## Project structure
+- **Days 1–5:** use customer information to predict whether a phone or internet
+  customer may leave.
 
-```text
+- **Days 6–7:** use product photos to predict what type of product is shown.
 
-data/          Downloaded dataset
-models/        Saved Day 1–6 model artifacts
-notebooks/     Day 1–6 project lessons
-reports/       Evaluation tables, learning curves, ANN results, and CNN results
-src/           Reusable data, training, evaluation, and prediction code
+Each section below explains what the day does, how to run it, and where to
+find its results. Day 7 covers image classification only; YOLO and object
+detection are not included.
 
+## What is in the folders?
+
+- `data\` — datasets used by the project. These stay on your computer and are
+  not uploaded to GitHub.
+- `src\` — the Python programs that train or use the models.
+- `notebooks\` — interactive lessons for each stage.
+- `models\` — trained models saved by the programs.
+- `reports\` — result tables, charts, and confusion matrices.
+
+## Set up the project
+
+Install the project's Python packages:
+
+```powershell
+python -m pip install -r requirements.txt
 ```
 
-## Setup
+### Get the customer dataset (Days 1–5)
 
-Download the [Telco Customer Churn dataset](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
-and place its CSV in `data/`. The project recognizes these filenames:
+Download the [Telco Customer Churn dataset](https://www.kaggle.com/datasets/blastchar/telco-customer-churn).
+Put its CSV file in `data\` and use one of these names:
 
 - `Telco-Customer-Churn.csv`
 - `WA_Fn-UseC_-Telco-Customer-Churn.csv`
 - `telco_customer_churn.csv`
 
-Install the requirements:
+The project uses the customer details as examples and the `Churn` column as
+the answer it learns to predict. It sets aside 20% of the rows for a final
+check and uses the rest to train and compare models.
 
-```shell
-python -m pip install -r requirements.txt
+### Get the product photos (Days 6–7)
+
+Fashion-MNIST is downloaded automatically by Keras the first time its training
+code runs. For catalog photos, download [Fashion Product Images Small](https://www.kaggle.com/datasets/paramaggarwal/fashion-product-images-small)
+and extract it like this:
+
+```text
+data\fashion-product-images-small\
+    styles.csv
+    images\
+        15970.jpg
+        ...
 ```
 
-XGBoost is optional. If installed, it is included as a Day 4 candidate; the
-Random Forest candidate runs without it.
+The loader also accepts a `myntradataset\` folder inside
+`fashion-product-images-small\`. Day 7 downloads ResNet50's pretrained weights
+from the internet the first time it runs. The catalog photos and downloaded
+weights are not included in this repository.
 
-## Run the project
+## Which model was used each day, and how accurate was it?
 
-Run all five stages from the repository root:
+These are the accuracies recorded in the saved result files. For Days 1–5,
+accuracy measures churn predictions on the held-back customer test data. Day 6
+shows results for both Fashion-MNIST and the product catalog.
 
-```shell
-python -m src.run_pipeline
-```
+| Day | Model | Test accuracy | What the result means |
+|---|---|---:|---|
+| 1 | Logistic Regression | **73.81%** | First customer-churn baseline |
+| 2 | RBF Support Vector Machine (SVM) | **74.38%** | Chosen for its cross-validation recall; Random Forest had higher accuracy, at 78.14% |
+| 3 | Tuned RBF SVM | **72.39%** | Best tuned model by cross-validation recall |
+| 4 | Random Forest with feature selection | **77.36%** | Day 4 churn champion |
+| 5 | Keras neural network (ANN) | **79.42%** | Higher accuracy than Day 4, but lower recall for customers who left |
+| 6 | CNN on Fashion-MNIST | **90.03%** | Accuracy on the ten-class Fashion-MNIST test set |
+| 6 | CNN on old catalog labels (`articleType`) | **35.31%** | Earlier run with 132 detailed product types; not the new model |
+| 6 | CNN on broad catalog labels (`masterCategory`) | **Not measured yet** | New model must be trained before its accuracy is available |
+| 7 | ImageNet-pretrained ResNet50 | **Not recorded** | Model file exists, but no Day 7 test results or comparison report are available yet |
 
-Optionally provide the CSV path:
+Accuracy is not the only measure of a model. In particular, a churn model can
+have higher accuracy while missing more customers who leave. The detailed
+sections below explain what each day's model does and where to find its
+complete results.
 
-```shell
-python -m src.run_pipeline --data path\to\Telco-Customer-Churn.csv
-```
+## Day 1 — Start with a simple churn model
 
-The workflow uses one stratified 80/20 split with random state 42. Days 2–4
-select candidates using three-fold cross-validation on the training partition.
-The Day 5 ANN uses an internal validation split and early stopping. The held-out
-test partition is reserved for reporting final metrics and the Day 4/5 benchmark.
+**In plain language:** teach the computer to make a first guess about which
+customers may leave, using their account details.
 
-Run an individual stage with:
+**What the program does**
 
-```shell
+- Fills in missing information and prepares text answers for the model.
+- Trains a Logistic Regression model, with extra attention to customers who
+  left.
+- Measures how often its predictions are correct and how well it finds
+  customers who leave.
+
+**Run it**
+
+```powershell
 python -m src.train
-python -m src.model_comparison
-python -m src.hyperparameter_tuning
-python -m src.day4_ensemble
-python -m src.day5_ann
-python -m src.evaluate
-python -m src.predict
 ```
 
-`src.predict.predict(customer_data)` accepts a mapping for one customer or a
-DataFrame for multiple customers. It returns `predicted_churn` (`Yes` or `No`)
-and `churn_probability` using the Day 4 champion. Run the full pipeline first
-to create that model artifact.
+**Files it creates**
 
-The Day 5 ANN can be run after Day 4 with `python -m src.day5_ann`. Its Keras
-model and preprocessing metadata are saved separately from the classical
-prediction pipeline.
+- Trained model: `models\churn_day1_baseline.joblib`
+- Results: `reports\day1_baseline_metrics.csv`
+- Lesson: `notebooks\RetailMind_Churn_Days_1_to_3.ipynb`
 
-Run the Day 6 sections from the repository root:
+The saved results show **73.81% accuracy**, **78.34% recall** for customers
+who left, and **0.841 ROC-AUC**. See the results file for all measurements.
 
-```shell
+## Day 2 — Compare different churn models
+
+**In plain language:** try three different kinds of models and keep the one
+that does best at finding customers who leave.
+
+**What the program tries**
+
+- Decision Tree
+- Random Forest
+- Support Vector Machine (SVM)
+
+It tests each model several times on different parts of the training data.
+This helps choose a model without relying on just one split.
+
+**Run it**
+
+```powershell
+python -m src.model_comparison
+```
+
+**Files it creates**
+
+- Selected model: `models\churn_day2_champion.joblib`
+- Model results: `reports\day2_model_comparison.csv`
+- Lesson: `notebooks\RetailMind_Churn_Days_1_to_3.ipynb`
+
+The RBF SVM was selected by cross-validation recall. Its test accuracy was
+**74.38%**. The Random Forest had the highest accuracy of these three models
+at **78.14%**, but it found fewer customers who left, so it was not selected.
+See the results file for each model's full measurements.
+
+## Day 3 — Improve the Day 2 models
+
+**In plain language:** try different settings for the Day 2 models and check
+whether more training examples help.
+
+**What the program does**
+
+- Tries several settings for the Decision Tree, Random Forest, and SVM.
+- Chooses settings using the training data, then checks the chosen model on
+  the held-back test data.
+- Draws a chart showing how results change as the amount of training data
+  increases.
+
+**Run it**
+
+```powershell
+python -m src.hyperparameter_tuning
+```
+
+**Files it creates**
+
+- Tuned model: `models\churn_day3_tuned.joblib`
+- Settings tried: `reports\day3_cv_tuning_results.csv`
+- Test results: `reports\day3_test_metrics.csv`
+- Learning chart and data: `reports\day3_learning_curve.png` and
+  `reports\day3_learning_curve.csv`
+- Lesson: `notebooks\RetailMind_Churn_Days_1_to_4.ipynb`
+
+The tuned RBF SVM was selected by cross-validation recall. Its saved test
+accuracy was **72.39%**. See the results file for the other measurements.
+
+## Day 4 — Add useful customer details and compare models
+
+**In plain language:** create a few extra details from the customer data, then
+see if a group of decision trees can predict churn better.
+
+**Extra details include**
+
+- A customer's time with the company grouped into ranges.
+- Average charges per month.
+- Whether the customer has a month-to-month contract.
+- Whether the customer pays by electronic check.
+
+The program keeps the steps for creating and preparing these details together
+with the model. This helps make sure predictions use the same steps as
+training. XGBoost can also be tried if it is installed; it is optional.
+
+**Run it**
+
+Run Day 3 first, or run the full Days 1–5 workflow below. Then run:
+
+```powershell
+python -m src.day4_ensemble
+```
+
+**Files it creates**
+
+- Selected model: `models\churn_day4_champion.joblib`
+- Day 4 model results: `reports\day4_ensemble_comparison.csv`
+- Day 3 and Day 4 comparison: `reports\day4_vs_day3_comparison.csv`
+- Lesson: `notebooks\RetailMind_Churn_Days_1_to_4.ipynb`
+
+The Random Forest with feature selection was selected in the saved run. Its
+test accuracy was **77.36%**.
+
+## Day 5 — Try a neural network for churn
+
+**In plain language:** build a small neural network and compare it with the
+Day 4 model using the same customer data.
+
+**What the program does**
+
+- Prepares numbers and text answers for a Keras neural network.
+- Stops training when validation results stop improving.
+- Compares the neural network and Day 4 model using the same final test data.
+
+**Run it**
+
+Run Day 4 first, or run the full Days 1–5 workflow below. Then run:
+
+```powershell
+python -m src.day5_ann
+```
+
+**Files it creates**
+
+- Neural-network model: `models\churn_day5_ann.keras`
+- Saved text and number settings:
+  `models\churn_day5_ann_preprocessing.json`
+- Comparison results: `reports\day5_ann_vs_classical.csv`
+- Lesson: `notebooks\RetailMind_Churn_Day_5_ANN.ipynb`
+
+In the saved results, the neural network was correct **79.42%** of the time,
+compared with **77.36%** for Day 4. However, it found **55.88%** of customers
+who left, compared with **62.30%** for Day 4. Neither model is best in every
+measure, so check the comparison file before choosing one.
+
+## Day 6 — Recognize product categories in photos
+
+**In plain language:** first try a CNN on a small standard clothing-photo
+dataset, then train a separate CNN to assign broad categories to catalog
+photos. Fashion-MNIST keeps its own ten labels; the catalog model uses
+`masterCategory`.
+
+**What the program does**
+
+- Trains a small image model on Fashion-MNIST's ten clothing categories.
+- Reads product photo names and broad `masterCategory` labels from `styles.csv`.
+- Skips photos that are missing and categories with fewer than three
+  examples.
+- Resizes and slightly changes training images to help the model learn.
+- Saves the catalog model and a table showing which categories it confused.
+
+**Run it**
+
+```powershell
 python src\day6_cnn.py
 ```
 
-The Fashion-MNIST section runs by default. To train the catalog model too,
-uncomment its call in the `if __name__ == "__main__":` block at the bottom of
-`src/day6_cnn.py`. Both training sections and the prediction function are
-implemented in that same file.
+This trains Fashion-MNIST first and the product catalog second. Both models
+save their test accuracy and test loss to separate report files. The full
+catalog has tens of thousands of photos and can take a long time to train,
+especially on a CPU. The [Day 6 notebook](notebooks/RetailMind_Day_6_CNN_Image_Classification.ipynb)
+also has separate cells if you want to run one model at a time.
 
-The Fashion-MNIST prototype is saved to
-`models/fashion_mnist_prototype.keras`. The product catalog model and its class
-labels are saved to `models/vision_catalog_classifier.keras` and
-`models/vision_class_names.json`; its confusion matrix is saved to
-`models/vision_confusion_matrix.csv`. Catalog labels use the dataset's
-`articleType` column, and categories with fewer than three available images
-are excluded. To classify one image after training, run
-`predict_catalog_image(image_path)` from `src/day6_cnn.py`, or uncomment the
-example call at the bottom of that file. The downloaded catalog folder is
-Git-ignored and will not be added to commits.
+**Files it creates**
 
-## Workflow
+- Fashion-MNIST model: `models\fashion_mnist_prototype.keras`
+- Fashion-MNIST accuracy and loss: `reports\day6_fashion_mnist_metrics.csv`
+- Fashion-MNIST confusion table:
+  `reports\day6_fashion_mnist_confusion_matrix.csv`
+- Master-category model: `models\vision_master_category_classifier.keras`
+- Category names: `models\vision_master_category_class_names.json`
+- Catalog confusion table: `models\vision_master_category_confusion_matrix.csv`
+- Catalog test loss and accuracy:
+  `reports\day6_master_category_metrics.csv`
 
-- **Day 1 — Baseline:** class-balanced Logistic Regression with numeric
-  imputation/scaling and categorical imputation/one-hot encoding.
+The Fashion-MNIST model reached **90.03% accuracy** on its test photos. The
+earlier catalog model reached **35.31% accuracy** when predicting detailed
+`articleType` labels (132 product types). The new catalog model predicts the
+broader `masterCategory` labels instead, so that old score does not describe
+the new model. The new model's accuracy will be available in
+`reports\day6_master_category_metrics.csv` after it is trained.
 
-- **Day 2 — Model comparison:** Decision Tree, Random Forest, and RBF SVM;
-  the champion is chosen by mean cross-validation recall.
+To predict an image after training the catalog model, open `src\day6_cnn.py`
+and set `image_path` near the bottom of the file to your image's path. Running
+the script will predict that image instead of training. Leave the example
+assignment commented out to train both models. The prediction prints the most
+likely master category and confidence, plus the top three category guesses.
 
-- **Day 3 — Tuning:** GridSearchCV for those candidates, final test metrics,
-  and a recall learning curve.
+## Day 7 — Use a pretrained model for product photos
 
-- **Day 4 — Feature engineering and ensembles:** tenure bands, average monthly
-  charges, contract/payment indicators, `SelectKBest`, and Random Forest
-  (plus optional XGBoost). The Day 4 pipeline includes feature engineering,
-  preprocessing, and selection so predictions use the same transformations.
+**In plain language:** start with a ResNet50 model that has already learned
+general image patterns, teach it the catalog's broad master categories, then
+adjust some of its image-recognition layers.
 
-- **Day 5 — Neural network benchmark:** a Keras ANN normalizes numeric inputs,
-  encodes categories with `StringLookup`, and trains two hidden layers with
-  early stopping on validation loss. It is compared with the Day 4 classical
-  champion on the same held-out split. The model is saved as
-  `models/churn_day5_ann.keras`; its category vocabularies and numeric
-  imputation values are saved alongside it.
+**What the program does**
 
-## When to use which model
+- Learns a new category output layer while the pretrained image model is
+  frozen.
+- Then fine-tunes the top part of the pretrained model using a smaller
+  learning rate.
+- Compares Day 7 with the Day 6 catalog CNN using the same test photos.
+- Saves the ResNet50 model, its category labels, test comparison, and
+  confusion table.
 
-The ANN is an experiment, not an automatic promotion. For this modest,
-structured Telco dataset, the Day 4 Random Forest/SVM may be preferable when
-they match or beat ANN quality: they are easier to train, need fewer runtime
-dependencies, and are simpler to inspect. Consider the ANN when repeated
-validation evidence shows a useful lift, or when the product has enough
-tabular data/scale to justify neural-network training and serving. Compare
-recall, precision, ROC-AUC, training cost, and operational needs—not depth
-alone—and keep the same held-out test set out of model selection.
+**Before running**
 
-On the current fixed split at a 0.5 threshold, the ANN reached 0.841 ROC-AUC
-and 0.794 accuracy versus 0.826 and 0.774 for the Day 4 champion, but its churn
-recall was lower (0.559 versus 0.623) and its F1 was similar (0.590 versus
-0.594). That is a trade-off, not an across-the-board win; the comparison is
-recorded in `reports/day5_ann_vs_classical.csv`.
+Train the Day 6 catalog model first. Day 7 uses its saved model and labels for
+the comparison.
 
-## Day 6 — CNN image classification
+**Run it**
 
-The CNN uses Fashion-MNIST to validate the image model workflow and supports
-training on the Kaggle Fashion Product Images Small catalog. Product images
-are resized and augmented during training; the held-out catalog test split is
-evaluated with accuracy and a confusion matrix. Record the catalog test
-accuracy here after running the catalog training command: **not yet measured**
-(the Kaggle product-image dataset is local-only and Git-ignored).
+```powershell
+python src\day7_transfer_learning.py
+```
 
-The Fashion-MNIST prototype reached **86.38% test accuracy** after three
-training epochs on the standard 10,000-image test set. This validates the CNN
-workflow only; it is not the accuracy of the catalog classifier.
+Or follow the [Day 7 notebook](notebooks/RetailMind_Day_7_Transfer_Learning.ipynb).
 
-Churn `Yes` is the positive class. Downloaded data and generated model files
-are excluded by Git. Do not publish the raw dataset unless its license and
-repository policy allow it.
+**Files it creates**
+
+- ResNet50 model: `models\vision_master_category_resnet50.keras`
+- Master-category names: `models\vision_master_category_resnet50_classes.json`
+- Day 6 and Day 7 comparison: `reports\day7_transfer_learning_comparison.csv`
+- Confusion table: `models\day7_master_category_confusion_matrix.csv`
+
+The ResNet50 model file is present, but a Day 7 test-accuracy or comparison
+report is not available. Its accuracy is therefore **not recorded** here.
+Training the full photo collection can take a long time on a CPU. YOLO and
+object detection are not included.
+
+## Run all customer-churn days
+
+This command runs **Days 1–5 only**. It does not run the separate image
+projects for Days 6–7.
+
+```powershell
+python -m src.run_pipeline
+```
+
+If the Telco CSV is somewhere else, provide its path:
+
+```powershell
+python -m src.run_pipeline --data path\to\Telco-Customer-Churn.csv
+```
+
+To check the saved Day 4 model:
+
+```powershell
+python -m src.evaluate
+```
+
+For code-based predictions, `src.predict.predict(customer_data)` accepts
+details for one customer or several customers. It returns a churn prediction
+(`Yes` or `No`) and a probability. Run the customer-churn workflow first so
+the Day 4 model exists.
+
+## A few things to remember
+
+- **Accuracy** is how often the model is right overall.
+- **Recall** tells how many of the customers who actually left were found.
+- A **confusion matrix** shows which types the model predicted correctly or
+  mixed up.
+- Day 6 and Day 7 classify one product type per image. They do not draw boxes
+  around products or find several products in one image.
+- Datasets and trained model files are kept off GitHub. Check dataset
+  permissions before sharing downloaded data.
