@@ -18,7 +18,9 @@ detection are not included.
 - `data\` — datasets used by the project. These stay on your computer and are
   not uploaded to GitHub.
 - `src\` — the Python programs that train or use the models.
-- `notebooks\` — interactive lessons for each stage.
+- `notebooks\` — interactive lessons with the full training code in their
+  cells, so you can run the lessons without relying on the Python scripts in
+  `src\`.
 - `models\` — trained models saved by the programs.
 - `reports\` — result tables, charts, and confusion matrices.
 
@@ -375,6 +377,9 @@ demand for each store, or each store and product combination.
 ```powershell
 python src\day9_demand_forecasting.py
 ```
+
+You can also run the shorter step-by-step version in
+[the Day 9 notebook](notebooks/RetailMind_Day_9_Demand_Forecasting.ipynb).
 
 Download one of the datasets and place its `train.csv` in a location described
 in [Get the demand dataset (Day 9)](#get-the-demand-dataset-day-9). Training
