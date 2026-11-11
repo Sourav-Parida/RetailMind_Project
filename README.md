@@ -1,11 +1,13 @@
 # RetailMind AI
 
-RetailMind is a learning project built one step at a time. It has two parts:
+RetailMind is a learning project built one step at a time. Its increments cover:
 
 - **Days 1–5:** use customer information to predict whether a phone or internet
   customer may leave.
 
 - **Days 6–7:** use product photos to predict what type of product is shown.
+
+- **Day 9:** use past sales to forecast future store or product demand.
 
 Each section below explains what the day does, how to run it, and where to
 find its results. Day 7 covers image classification only; YOLO and object
@@ -60,28 +62,46 @@ The loader also accepts a `myntradataset\` folder inside
 from the internet the first time it runs. The catalog photos and downloaded
 weights are not included in this repository.
 
+### Get the demand dataset (Day 9)
+
+Download either the [Rossmann Store Sales](https://www.kaggle.com/competitions/rossmann-store-sales)
+training CSV or the [Store Item Demand Forecasting](https://www.kaggle.com/competitions/demand-forecasting-kernels-only)
+training CSV. Put it in one of these locations:
+
+```text
+data\rossmann-store-sales\train.csv
+data\store-item-demand-forecasting\train.csv
+```
+
+The program recognizes the `Date`, `Store`, and `Sales` columns in Rossmann
+data, and the `date`, `store`, `item`, and `sales` columns in Store Item Demand
+data. If you use another location, set `DATA_CSV` near the top of
+`src\day9_demand_forecasting.py`.
+
 ## Which model was used each day, and how accurate was it?
 
-These are the accuracies recorded in the saved result files. For Days 1–5,
+These are the scores recorded in the saved result files. For Days 1–5,
 accuracy measures churn predictions on the held-back customer test data. Day 6
-shows results for both Fashion-MNIST and the product catalog.
+shows results for both Fashion-MNIST and the product catalog; Day 9 uses
+forecast-error measurements instead of accuracy.
 
-| Day | Model | Test accuracy | What the result means |
+| Day | Model | Test accuracy or forecast error | What the result means |
 |---|---|---:|---|
 | 1 | Logistic Regression | **73.81%** | First customer-churn baseline |
 | 2 | RBF Support Vector Machine (SVM) | **74.38%** | Chosen for its cross-validation recall; Random Forest had higher accuracy, at 78.14% |
 | 3 | Tuned RBF SVM | **72.39%** | Best tuned model by cross-validation recall |
 | 4 | Random Forest with feature selection | **77.36%** | Day 4 churn champion |
 | 5 | Keras neural network (ANN) | **79.42%** | Higher accuracy than Day 4, but lower recall for customers who left |
-| 6 | CNN on Fashion-MNIST | **90.03%** | Accuracy on the ten-class Fashion-MNIST test set |
-| 6 | CNN on old catalog labels (`articleType`) | **35.31%** | Earlier run with 132 detailed product types; not the new model |
-| 6 | CNN on broad catalog labels (`masterCategory`) | **Not measured yet** | New model must be trained before its accuracy is available |
+| 6 | CNN on Fashion-MNIST | **91.42%** | Accuracy on the ten-class Fashion-MNIST test set |
+| 6 | CNN on broad catalog labels (`masterCategory`) | **66.88%** | Accuracy on six broad product categories |
 | 7 | ImageNet-pretrained ResNet50 | **Not recorded** | Model file exists, but no Day 7 test results or comparison report are available yet |
+| 9 | LSTM daily demand forecaster | **Not measured** | Demand uses MAE and RMSE, not classification accuracy |
 
 Accuracy is not the only measure of a model. In particular, a churn model can
 have higher accuracy while missing more customers who leave. The detailed
 sections below explain what each day's model does and where to find its
-complete results.
+complete results. For Day 9, MAE and RMSE are not available until you train on
+a demand dataset.
 
 ## Day 1 — Start with a simple churn model
 
@@ -279,12 +299,13 @@ also has separate cells if you want to run one model at a time.
 - Catalog test loss and accuracy:
   `reports\day6_master_category_metrics.csv`
 
-The Fashion-MNIST model reached **90.03% accuracy** on its test photos. The
+The Fashion-MNIST model reached **91.42% accuracy** on its test photos. The
 earlier catalog model reached **35.31% accuracy** when predicting detailed
 `articleType` labels (132 product types). The new catalog model predicts the
 broader `masterCategory` labels instead, so that old score does not describe
-the new model. The new model's accuracy will be available in
-`reports\day6_master_category_metrics.csv` after it is trained.
+the new model. The new model reached **66.88% accuracy** across six broad
+categories. Both current Day 6 scores are recorded in their corresponding
+`reports\day6_*_metrics.csv` files.
 
 To predict an image after training the catalog model, open `src\day6_cnn.py`
 and set `image_path` near the bottom of the file to your image's path. Running
@@ -333,10 +354,49 @@ report is not available. Its accuracy is therefore **not recorded** here.
 Training the full photo collection can take a long time on a CPU. YOLO and
 object detection are not included.
 
+## Day 9 — Forecast store and product demand
+
+**In plain language:** use recent daily sales to estimate the next day's
+demand for each store, or each store and product combination.
+
+**What the program does**
+
+- Reads either Rossmann Store Sales or Store Item Demand data.
+- Sums duplicate daily sales and fills missing dates with zero sales.
+- Uses the previous 28 days to predict the next day.
+- Trains one LSTM across the available store or store-item series.
+- Keeps the latest 20% of dates aside for the final test and uses an earlier
+  10% for validation, preserving date order.
+- Reports MAE and RMSE, saves test predictions, forecasts the next day for
+  each series, and creates an actual-versus-predicted SVG plot.
+
+**Run it**
+
+```powershell
+python src\day9_demand_forecasting.py
+```
+
+Download one of the datasets and place its `train.csv` in a location described
+in [Get the demand dataset (Day 9)](#get-the-demand-dataset-day-9). Training
+may take time, depending on how many store/product series the dataset contains.
+
+**Files it creates**
+
+- Trained LSTM: `models\day9_demand_forecaster.keras`
+- Model settings and per-series scaling: `models\day9_demand_forecaster_metadata.json`
+- Test MAE/RMSE: `reports\day9_demand_forecast_metrics.csv`
+- Actual and predicted test sales: `reports\day9_demand_test_predictions.csv`
+- Next-day demand by store/product: `reports\day9_demand_next_day_forecast.csv`
+- Example actual-versus-predicted chart: `reports\day9_demand_forecast.svg`
+
+MAE and RMSE will be available in the metrics file after training. The
+`forecast_next_demand` function in `src\day9_demand_forecasting.py` can also
+produce a next-day estimate for a trained store or store-product series.
+
 ## Run all customer-churn days
 
 This command runs **Days 1–5 only**. It does not run the separate image
-projects for Days 6–7.
+projects for Days 6–7 or the demand forecast for Day 9.
 
 ```powershell
 python -m src.run_pipeline

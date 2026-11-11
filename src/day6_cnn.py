@@ -434,9 +434,9 @@ def predict_catalog_image(image_path):
 
 
 def main():
-    image_path = None
+    # image_path = None
     # Uncomment and set an image path to predict instead of training:
-    # image_path = r"data\fashion-product-images-small\images\15970.jpg"
+    image_path = r"data\fashion-product-images-small\images\15970.jpg"
 
     if image_path is not None:
         catalog_model, catalog_class_names = load_catalog_model()
