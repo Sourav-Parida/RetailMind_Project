@@ -10,13 +10,14 @@ data/fashion-product-images-small/
 data/.kagglehub/
 models/*.joblib
 models/*.keras
+models/*.pt
 models/vision_confusion_matrix.csv
 models/vision_master_category_confusion_matrix.csv
-models/day7_transfer_confusion_matrix.csv
-models/day7_master_category_confusion_matrix.csv
 models/day9_demand_forecaster_metadata.json
 models/*_preprocessing.json
 models/*_classes.json
 reports/*.csv
 reports/*.png
+reports/day7_detections/
+reports/day8_gradcam/
 reports/day9_demand_forecast.svg

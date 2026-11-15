@@ -5,13 +5,14 @@ RetailMind is a learning project built one step at a time. Its increments cover:
 - **Days 1–5:** use customer information to predict whether a phone or internet
   customer may leave.
 
-- **Days 6–7:** use product photos to predict what type of product is shown.
+- **Days 6–8:** classify product photos, locate COCO objects with YOLO, and
+  highlight the image regions that influenced a prediction.
 
 - **Day 9:** use past sales to forecast future store or product demand.
 
 Each section below explains what the day does, how to run it, and where to
-find its results. Day 7 covers image classification only; YOLO and object
-detection are not included.
+find its results. Day 7 uses a pretrained COCO detector; it does not train a
+custom fashion-product detector.
 
 ## What is in the folders?
 
@@ -45,7 +46,7 @@ The project uses the customer details as examples and the `Churn` column as
 the answer it learns to predict. It sets aside 20% of the rows for a final
 check and uses the rest to train and compare models.
 
-### Get the product photos (Days 6–7)
+### Get the product photos (Days 6–8)
 
 Fashion-MNIST is downloaded automatically by Keras the first time its training
 code runs. For catalog photos, download [Fashion Product Images Small](https://www.kaggle.com/datasets/paramaggarwal/fashion-product-images-small)
@@ -61,8 +62,9 @@ data\fashion-product-images-small\
 
 The loader also accepts a `myntradataset\` folder inside
 `fashion-product-images-small\`. Day 7 downloads ResNet50's pretrained weights
-from the internet the first time it runs. The catalog photos and downloaded
-weights are not included in this repository.
+and YOLO's COCO weights from the internet when needed. Day 8 reuses the saved
+Day 7 classifier and does not train another one. The catalog photos and
+downloaded weights are not included in this repository.
 
 ### Get the demand dataset (Day 9)
 
@@ -96,7 +98,8 @@ forecast-error measurements instead of accuracy.
 | 5 | Keras neural network (ANN) | **79.42%** | Higher accuracy than Day 4, but lower recall for customers who left |
 | 6 | CNN on Fashion-MNIST | **91.42%** | Accuracy on the ten-class Fashion-MNIST test set |
 | 6 | CNN on broad catalog labels (`masterCategory`) | **66.88%** | Accuracy on six broad product categories |
-| 7 | ImageNet-pretrained ResNet50 | **91.82%** | Model file exists, but no Day 7 test results or comparison report are available yet |
+| 7 | ImageNet-pretrained ResNet50 | **Not measured** | Train the Day 7 model to create the test comparison report; YOLO detection is a separate task |
+| 8 | Grad-CAM explanation for the Day 7 ResNet50 | No new score | Reuses the Day 7 model and visualizes regions that influenced a prediction |
 | 9 | LSTM daily demand forecaster | **Not measured** | Demand uses MAE and RMSE, not classification accuracy |
 
 
@@ -115,10 +118,8 @@ customers may leave, using their account details.
 **What the program does**
 
 - Fills in missing information and prepares text answers for the model.
-- Trains a Logistic Regression model, with extra attention to customers who
-  left.
-- Measures how often its predictions are correct and how well it finds
-  customers who leave.
+- Trains a Logistic Regression model, with extra attention to customers who left.
+- Measures how often its predictions are correct and how well it finds customers who leave.
 
 **Run it**
 
@@ -330,8 +331,9 @@ adjust some of its image-recognition layers.
 - Then fine-tunes the top part of the pretrained model using a smaller
   learning rate.
 - Compares Day 7 with the Day 6 catalog CNN using the same test photos.
-- Saves the ResNet50 model, its category labels, test comparison, and
-  confusion table.
+- Uses pretrained Ultralytics YOLO to draw boxes around objects it recognizes.
+- Saves the ResNet50 model, its category labels, accuracy comparison, and
+  annotated detection photos.
 
 **Before running**
 
@@ -344,19 +346,101 @@ the comparison.
 python src\day7_transfer_learning.py
 ```
 
+With no options, the program runs the classifier training/comparison and then
+the object detector. In `main()` near the bottom of the file, comment out one
+of these calls to run just the other task:
+
+```python
+run_classifier_training()
+run_object_detection()
+```
+
+Leave both calls active to run both tasks. You can also follow only the
+classifier or YOLO cells in the notebook; run its setup cell first. Run all
+notebook cells to do both.
+
 Or follow the [Day 7 notebook](notebooks/RetailMind_Day_7_Transfer_Learning.ipynb).
+
+The command above trains the classifier. To classify one image with the saved
+ResNet50 model:
+
+```powershell
+python src\day7_transfer_learning.py --classify data\fashion-product-images-small\images\15970.jpg
+```
+
+To detect objects and save annotated copies:
+
+```powershell
+python src\day7_transfer_learning.py --detect data\fashion-product-images-small\images\15970.jpg
+```
+
+YOLO downloads the small `yolo11n.pt` COCO model to `models\` the first time
+it runs. You can also pass multiple image paths after `--detect`. Detection
+results are saved to `reports\day7_detections\`. The demo keeps only COCO's
+backpack, umbrella, handbag, tie, and suitcase classes. COCO does not include
+most fashion products, so this is a pretrained detection demo rather than a
+custom product detector; it can still miss products.
 
 **Files it creates**
 
 - ResNet50 model: `models\vision_master_category_resnet50.keras`
 - Master-category names: `models\vision_master_category_resnet50_classes.json`
 - Day 6 and Day 7 comparison: `reports\day7_transfer_learning_comparison.csv`
-- Confusion table: `models\day7_master_category_confusion_matrix.csv`
+- YOLO annotated images: `reports\day7_detections\`
 
-The ResNet50 model file is present, but a Day 7 test-accuracy or comparison
-report is not available. Its accuracy is therefore **not recorded** here.
-Training the full photo collection can take a long time on a CPU. YOLO and
-object detection are not included.
+The Day 7 test accuracy is saved in the comparison CSV after training. The
+classifier training can take a long time on a CPU. YOLO runs detection only
+and does not require labeled bounding boxes or detector training.
+
+## Day 8 — See why the model chose a category
+
+**In plain language:** show the parts of a product photo that most influenced
+the Day 7 ResNet50 category prediction.
+
+Day 8 uses Grad-CAM. It does not train another model: it needs the saved Day 7
+ResNet50 model and its matching category-name JSON file.
+
+**Run the notebook**
+
+Open `notebooks\RetailMind_Day_8_Explainable_Vision.ipynb`. It loads the saved
+model, predicts a few catalog photos, and blends each heatmap over its photo.
+The notebook contains the complete explanation code and does not depend on
+the Python module.
+
+**Run the Python program**
+
+From the project folder, run this to explain the first three catalog photos:
+
+```powershell
+python src\day8_explainable_vision.py
+```
+
+Or give it one or more image paths:
+
+```powershell
+python src\day8_explainable_vision.py data\fashion-product-images-small\images\15970.jpg
+```
+
+The program shows each photo beside its Grad-CAM overlay. It uses the Day 7
+model and does not train a new one. It also saves each visualization as a PNG
+in `reports\day8_gradcam\`.
+
+The notebook saves its overlays to the same folder.
+
+**Use the Python function in another program**
+
+```python
+from src.day8_explainable_vision import explain_image
+
+result = explain_image(
+    "data/fashion-product-images-small/images/15970.jpg"
+)
+print(result["predicted_category"], result["confidence"])
+```
+
+The function returns the resized RGB image, a same-sized Grad-CAM heatmap,
+the predicted category, and its confidence. Display the image and heatmap
+together with Matplotlib to see the overlay.
 
 ## Day 9 — Forecast store and product demand
 
@@ -403,7 +487,7 @@ produce a next-day estimate for a trained store or store-product series.
 ## Run all customer-churn days
 
 This command runs **Days 1–5 only**. It does not run the separate image
-projects for Days 6–7 or the demand forecast for Day 9.
+projects for Days 6–8 or the demand forecast for Day 9.
 
 ```powershell
 python -m src.run_pipeline
@@ -432,7 +516,8 @@ the Day 4 model exists.
 - **Recall** tells how many of the customers who actually left were found.
 - A **confusion matrix** shows which types the model predicted correctly or
   mixed up.
-- Day 6 and Day 7 classify one product type per image. They do not draw boxes
-  around products or find several products in one image.
+- Day 6 and Day 7's classifier predict one broad category for an image. Day
+  7's separate YOLO detector can draw multiple boxes, but only for object
+  classes included in its pretrained COCO model.
 - Datasets and trained model files are kept off GitHub. Check dataset
   permissions before sharing downloaded data.
