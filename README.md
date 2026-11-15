@@ -88,7 +88,7 @@ shows results for both Fashion-MNIST and the product catalog; Day 9 uses
 forecast-error measurements instead of accuracy.
 
 | Day | Model | Test accuracy or forecast error | What the result means |
-|---|---|---:|---|
+|-----|-------|---------------------------------|-----------------------|
 | 1 | Logistic Regression | **73.81%** | First customer-churn baseline |
 | 2 | RBF Support Vector Machine (SVM) | **74.38%** | Chosen for its cross-validation recall; Random Forest had higher accuracy, at 78.14% |
 | 3 | Tuned RBF SVM | **72.39%** | Best tuned model by cross-validation recall |
@@ -96,8 +96,10 @@ forecast-error measurements instead of accuracy.
 | 5 | Keras neural network (ANN) | **79.42%** | Higher accuracy than Day 4, but lower recall for customers who left |
 | 6 | CNN on Fashion-MNIST | **91.42%** | Accuracy on the ten-class Fashion-MNIST test set |
 | 6 | CNN on broad catalog labels (`masterCategory`) | **66.88%** | Accuracy on six broad product categories |
-| 7 | ImageNet-pretrained ResNet50 | **Not recorded** | Model file exists, but no Day 7 test results or comparison report are available yet |
+| 7 | ImageNet-pretrained ResNet50 | **91.82%** | Model file exists, but no Day 7 test results or comparison report are available yet |
 | 9 | LSTM daily demand forecaster | **Not measured** | Demand uses MAE and RMSE, not classification accuracy |
+
+
 
 Accuracy is not the only measure of a model. In particular, a churn model can
 have higher accuracy while missing more customers who leave. The detailed
