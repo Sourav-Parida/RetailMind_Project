@@ -13,8 +13,8 @@ machine-learning feature to the same project.
 - **Phase 3 — Days 6–8: Product photos.** Classify clothing photos, improve
   classification with ResNet50 transfer learning, then use Grad-CAM to
   visualize which image regions influenced a prediction.
-- **Phase 4 — Days 9–10: Demand forecasting.** Predict next-day sales with an
-  LSTM, then forecast multiple weeks with a Seq2Seq attention model.
+- **Phase 4 — Days 9–10: Demand forecasting.** Forecast next-day sales with
+  an LSTM, then use attention for multi-day planning.
 
 ### Results at a glance
 
@@ -34,6 +34,7 @@ forecasting uses error measures instead of classification accuracy.
 | 7 | Catalog classification — ResNet50 | Fine-tunes a pretrained image model and compares it with Day 6. | **92.93% accuracy** |
 | 8 | Explainable vision — Grad-CAM | Highlights image regions that influenced the Day 7 category prediction. | No new accuracy score |
 | 9 | Demand forecasting — LSTM | Uses 28 days of sales to forecast next-day store-item demand. | **MAE 6.70 / RMSE 8.83 sales** |
+| 10 | Multi-horizon demand — Seq2Seq + attention | Forecasts 7 days and compares its first-day prediction with Day 9. | **7-day MAE 8.72 / RMSE 11.57 sales** |
 
 Day 2's Random Forest had higher accuracy (**78.14%**) than the selected SVM,
 but the SVM was selected because its cross-validation recall was higher. For
@@ -84,7 +85,7 @@ ResNet50's pretrained weights the first time it runs. Day 8 uses the saved
 Day 7 model. Product photos and downloaded model weights are not included in
 the repository.
 
-### Sales dataset for Days 9–10
+### Sales dataset for Day 9
 
 Download either [Rossmann Store Sales](https://www.kaggle.com/competitions/rossmann-store-sales)
 or [Store Item Demand Forecasting](https://www.kaggle.com/competitions/demand-forecasting-kernels-only).
@@ -332,30 +333,40 @@ python src\day9_demand_forecasting.py
 
 **Notebook:** `notebooks\RetailMind_Day_9_Demand_Forecasting.ipynb`.
 
-### Day 10 — Seq2Seq attention for multi-week demand
+### Day 10 — Seq2Seq forecasting with attention
 
-**In brief:** Use the previous 28 days of sales to predict the next 14 days
-for every store or store-item series.
+**In brief:** Use the previous 28 days to forecast the next 7 days.
 
-**What it does:** An LSTM encoder reads the sales history. A decoder predicts
-each future day, while additive attention gives each forecast day its own
-weights over the historical days. The program evaluates the 14-day forecasts
-against the recursive Day 9 LSTM predictions on the same held-out forecast
-origins. It reports MAE and RMSE overall and for each horizon day, saves
-multi-week predictions, and plots average attention weights. The Day 10
-metrics have not been measured yet; run the training to produce them.
+**What it does:** Encodes a short sales history, decodes a 7-day forecast,
+and applies attention so each forecast day can use information from the
+history. To keep the run manageable, training uses up to 24 representative
+store or store-item series, a small 16-unit LSTM, and at most 5 epochs.
+On the current Store Item Demand run, the 7-day test results were **MAE
+8.72** and **RMSE 11.57 sales** across **8,640 test windows**. On the same
+windows, the Day 9 model had **6.62 one-day MAE**, while Day 10 had **9.11
+one-day MAE**; lower error is better. Day 10 is a compact multi-day
+experiment, and its current one-day result is worse than the Day 9 baseline.
+The run also saves an attention heatmap.
 
-Train Day 9 first so the Day 10 comparison can load its saved model, then run:
+Train Day 9 first so its saved model is available for the one-day comparison.
+
+**Run:**
 
 ```powershell
 python src\day10_seq2seq_attention.py
 ```
 
-**Outputs:** `models\day10_demand_seq2seq_attention.keras`,
-`reports\day10_demand_forecast_metrics.csv`,
-`reports\day10_demand_test_predictions.csv`,
-`reports\day10_demand_multiweek_forecast.csv`, and
-`reports\day10_demand_attention.png`.
+Optionally specify the sales CSV:
+
+```powershell
+python src\day10_seq2seq_attention.py --data data\store-item-demand-forecasting\train.csv
+```
+
+**Outputs:** `models\day10_seq2seq_attention.keras`,
+`reports\day10_forecast_metrics.csv`, `reports\day10_test_predictions.csv`,
+`reports\day10_next_7_days.csv`, and attention weights in
+`reports\day10_attention_weights.csv` with a visualization at
+`reports\day10_attention.svg`.
 
 **Notebook:** `notebooks\RetailMind_Day_10_Seq2Seq_Attention.ipynb`.
 
@@ -383,8 +394,6 @@ predictions, use `src.predict.predict(customer_data)` after training Day 4.
 - **Recall:** of the customers who actually left, how many the model found.
 - **MAE and RMSE:** measures of how far demand forecasts are from actual
   sales; lower values are better.
-- **Attention:** learned weights that show which days in the history the
-  forecasting model uses for each future day.
 - **Grad-CAM:** a heatmap showing which image regions influenced a
   classification prediction.
 

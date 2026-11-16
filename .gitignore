@@ -13,10 +13,10 @@ models/*.keras
 models/day6_catalog_article_type_confusion_matrix.csv
 models/day6_master_category_confusion_matrix.csv
 models/day9_demand_forecaster_metadata.json
-models/day10_demand_seq2seq_attention_metadata.json
 models/*_preprocessing.json
 models/*_classes.json
-# reports/*.csv
-# reports/*.png
-# reports/day8_gradcam/
-# reports/day9_demand_forecast.svg
+reports/*.csv
+reports/*.png
+reports/day8_gradcam/
+reports/day9_demand_forecast.svg
+reports/day10_attention.svg
