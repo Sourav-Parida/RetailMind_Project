@@ -1,0 +1,2 @@
+dataset,test_loss,test_accuracy,epochs_trained,class_count
+fashion_mnist,0.238304,0.914200,10,10

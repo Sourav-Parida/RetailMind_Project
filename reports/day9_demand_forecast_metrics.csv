@@ -1,0 +1,2 @@
+dataset,series_count,train_windows,validation_windows,test_windows,test_mae,test_rmse,test_loss_scaled_mse,lookback_days,epochs_trained,test_start,test_end
+store-item-demand-forecasting,500,625000,91000,183000,6.696733344883731,8.827019929547829,0.43984758853912354,28,6,2016-12-31,2017-12-31

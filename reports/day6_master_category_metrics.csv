@@ -1,0 +1,2 @@
+dataset,test_loss,test_accuracy,epochs_trained,class_count
+fashion_product_master_category,1.067570,0.668767,12,6
