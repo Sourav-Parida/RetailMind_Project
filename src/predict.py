@@ -10,7 +10,7 @@ import pandas as pd
 from data_preprocessing import DATA_DIR, MODEL_DIR, find_dataset
 
 
-MODEL_PATH = MODEL_DIR / "churn_day4_champion.joblib"
+MODEL_PATH = MODEL_DIR / "day4_churn_champion.joblib"
 
 
 def predict(

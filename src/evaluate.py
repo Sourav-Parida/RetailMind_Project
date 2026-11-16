@@ -45,7 +45,7 @@ def main() -> None:
     parser.add_argument(
         "--model",
         type=Path,
-        default=MODEL_DIR / "churn_day4_champion.joblib",
+        default=MODEL_DIR / "day4_churn_champion.joblib",
         help="Path to a saved model pipeline.",
     )
     args = parser.parse_args()

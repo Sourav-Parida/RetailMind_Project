@@ -102,7 +102,7 @@ def tune_models(
     pd.DataFrame([metrics]).to_csv(
         report_dir / "day3_test_metrics.csv", index=False
     )
-    joblib.dump(champion, model_dir / "churn_day3_tuned.joblib")
+    joblib.dump(champion, model_dir / "day3_churn_tuned.joblib")
 
     sizes, train_scores, validation_scores = learning_curve(
         champion,

@@ -22,12 +22,12 @@ BATCH_SIZE = 32
 EPOCHS = 12
 SEED = 42
 AUTOTUNE = tf.data.AUTOTUNE
-FASHION_MODEL_PATH = MODEL_DIR / "fashion_mnist_prototype.keras"
+FASHION_MODEL_PATH = MODEL_DIR / "day6_fashion_mnist_prototype.keras"
 FASHION_METRICS_PATH = REPORT_DIR / "day6_fashion_mnist_metrics.csv"
 FASHION_CONFUSION_MATRIX_PATH = REPORT_DIR / "day6_fashion_mnist_confusion_matrix.csv"
-CATALOG_MODEL_PATH = MODEL_DIR / "vision_master_category_classifier.keras"
-CLASS_NAMES_PATH = MODEL_DIR / "vision_master_category_class_names.json"
-CONFUSION_MATRIX_PATH = MODEL_DIR / "vision_master_category_confusion_matrix.csv"
+CATALOG_MODEL_PATH = MODEL_DIR / "day6_master_category_cnn.keras"
+CLASS_NAMES_PATH = MODEL_DIR / "day6_master_category_class_names.json"
+CONFUSION_MATRIX_PATH = MODEL_DIR / "day6_master_category_confusion_matrix.csv"
 CATALOG_METRICS_PATH = REPORT_DIR / "day6_master_category_metrics.csv"
 
 FASHION_CLASS_NAMES = [

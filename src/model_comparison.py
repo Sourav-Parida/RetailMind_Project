@@ -76,7 +76,7 @@ def compare_models(
     model_dir.mkdir(parents=True, exist_ok=True)
     report_dir.mkdir(parents=True, exist_ok=True)
     results.to_csv(report_dir / "day2_model_comparison.csv", index=False)
-    joblib.dump(champion, model_dir / "churn_day2_champion.joblib")
+    joblib.dump(champion, model_dir / "day2_churn_champion.joblib")
     print("Day 2 model comparison (sorted by training CV recall):")
     print(results.to_string(index=False))
     print(f"Day 2 champion: {champion_name}")

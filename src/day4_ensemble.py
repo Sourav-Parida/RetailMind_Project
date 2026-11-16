@@ -23,7 +23,7 @@ from data_preprocessing import (
 from evaluate import evaluate_classifier
 
 
-DAY3_MODEL_PATH = MODEL_DIR / "churn_day3_tuned.joblib"
+DAY3_MODEL_PATH = MODEL_DIR / "day3_churn_tuned.joblib"
 
 
 def add_customer_features(input_frame: pd.DataFrame) -> pd.DataFrame:
@@ -185,7 +185,7 @@ def run_day4(
     report_dir.mkdir(parents=True, exist_ok=True)
     results.to_csv(report_dir / "day4_ensemble_comparison.csv", index=False)
     comparison.to_csv(report_dir / "day4_vs_day3_comparison.csv", index=False)
-    joblib.dump(champion, model_dir / "churn_day4_champion.joblib")
+    joblib.dump(champion, model_dir / "day4_churn_champion.joblib")
 
     print("Day 4 candidates (sorted by training CV recall):")
     print(results.to_string(index=False))

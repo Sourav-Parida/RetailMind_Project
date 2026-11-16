@@ -5,4 +5,3 @@ joblib
 matplotlib
 ipykernel
 tensorflow==2.18.0
-ultralytics

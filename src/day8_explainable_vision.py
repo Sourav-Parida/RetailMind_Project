@@ -20,21 +20,20 @@ ROOT = Path(__file__).resolve().parents[1]
 CATALOG_DIR = ROOT / "data" / "fashion-product-images-small"
 MODEL_PATHS = (
     (
-        ROOT / "models" / "vision_master_category_resnet50.keras",
-        ROOT / "models" / "vision_master_category_resnet50_classes.json",
+        ROOT / "models" / "day7_master_category_resnet50.keras",
+        ROOT / "models" / "day7_master_category_class_names.json",
     ),
     (
-        ROOT / "models" / "vision_master_category_resnet50.keras",
-        ROOT / "models" / "vision_master_category_class_names.json",
+        ROOT / "models" / "day7_master_category_resnet50.keras",
+        ROOT / "models" / "day6_master_category_class_names.json",
     ),
     (
-        ROOT / "models" / "vision_master_category_resnet50_notebook.keras",
-        ROOT / "models"
-        / "vision_master_category_resnet50_notebook_classes.json",
+        ROOT / "models" / "day7_master_category_resnet50_notebook.keras",
+        ROOT / "models" / "day7_master_category_class_names_notebook.json",
     ),
     (
-        ROOT / "models" / "vision_master_category_resnet50_notebook.keras",
-        ROOT / "models" / "vision_master_category_class_names.json",
+        ROOT / "models" / "day7_master_category_resnet50_notebook.keras",
+        ROOT / "models" / "day6_master_category_class_names.json",
     ),
 )
 LAST_CONV_LAYER_NAME = "conv5_block3_out"

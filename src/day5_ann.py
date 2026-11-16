@@ -34,9 +34,9 @@ except ImportError:
     )
 
 
-CLASSICAL_MODEL_PATH = MODEL_DIR / "churn_day4_champion.joblib"
-ANN_MODEL_PATH = MODEL_DIR / "churn_day5_ann.keras"
-ANN_METADATA_PATH = MODEL_DIR / "churn_day5_ann_preprocessing.json"
+CLASSICAL_MODEL_PATH = MODEL_DIR / "day4_churn_champion.joblib"
+ANN_MODEL_PATH = MODEL_DIR / "day5_churn_ann.keras"
+ANN_METADATA_PATH = MODEL_DIR / "day5_churn_ann_preprocessing.json"
 ANN_METRICS_PATH = REPORT_DIR / "day5_ann_vs_classical.csv"
 
 _SOURCE_DIR = str(Path(__file__).resolve().parent)

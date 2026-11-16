@@ -35,7 +35,7 @@ def train_baseline(
 
     model_dir.mkdir(parents=True, exist_ok=True)
     report_dir.mkdir(parents=True, exist_ok=True)
-    joblib.dump(model, model_dir / "churn_day1_baseline.joblib")
+    joblib.dump(model, model_dir / "day1_churn_baseline.joblib")
 
     metrics = evaluate_classifier(
         "Day 1 - Logistic Regression baseline", model, X_test, y_test
@@ -43,7 +43,7 @@ def train_baseline(
     pd.DataFrame([metrics]).to_csv(
         report_dir / "day1_baseline_metrics.csv", index=False
     )
-    print(f"Day 1 baseline saved to {model_dir / 'churn_day1_baseline.joblib'}")
+    print(f"Day 1 baseline saved to {model_dir / 'day1_churn_baseline.joblib'}")
     print(pd.DataFrame([metrics]).to_string(index=False))
     return model, metrics
 

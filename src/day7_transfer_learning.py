@@ -1,10 +1,10 @@
-"""Day 7 product classification and object detection.
+"""Day 7 ResNet50 transfer learning for product classification.
 
 Train the Day 6 catalog CNN first, then run this file from the repository root:
     python src/day7_transfer_learning.py
 
-Run the pretrained YOLO detector on images:
-    python src/day7_transfer_learning.py --detect path/to/product.jpg
+Classify one product photo with the trained model:
+    python src/day7_transfer_learning.py --classify path/to/product.jpg
 """
 
 import argparse
@@ -48,36 +48,27 @@ MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
 HEAD_EPOCHS = 5
 FINE_TUNE_EPOCHS = 3
-TRANSFER_MODEL_PATH = MODEL_DIR / "vision_master_category_resnet50.keras"
+TRANSFER_MODEL_PATH = MODEL_DIR / "day7_master_category_resnet50.keras"
 TRANSFER_CLASS_NAMES_PATH = (
-    MODEL_DIR / "vision_master_category_resnet50_classes.json"
+    MODEL_DIR / "day7_master_category_class_names.json"
 )
-NOTEBOOK_MODEL_PATH = MODEL_DIR / "vision_master_category_resnet50_notebook.keras"
+NOTEBOOK_MODEL_PATH = MODEL_DIR / "day7_master_category_resnet50_notebook.keras"
 NOTEBOOK_CLASS_NAMES_PATH = (
-    MODEL_DIR / "vision_master_category_resnet50_notebook_classes.json"
+    MODEL_DIR / "day7_master_category_class_names_notebook.json"
 )
 TRANSFER_MODEL_OPTIONS = (
     (TRANSFER_MODEL_PATH, TRANSFER_CLASS_NAMES_PATH),
     (NOTEBOOK_MODEL_PATH, NOTEBOOK_CLASS_NAMES_PATH),
     (
         TRANSFER_MODEL_PATH,
-        MODEL_DIR / "vision_master_category_class_names.json",
+        MODEL_DIR / "day6_master_category_class_names.json",
     ),
     (
         NOTEBOOK_MODEL_PATH,
-        MODEL_DIR / "vision_master_category_class_names.json",
+        MODEL_DIR / "day6_master_category_class_names.json",
     ),
 )
 COMPARISON_PATH = ROOT / "reports" / "day7_transfer_learning_comparison.csv"
-DETECTION_OUTPUT_DIR = ROOT / "reports" / "day7_detections"
-DEFAULT_DETECTOR_WEIGHTS = MODEL_DIR / "yolo11n.pt"
-DETECTOR_PRODUCT_CLASSES = {
-    "backpack",
-    "umbrella",
-    "handbag",
-    "tie",
-    "suitcase",
-}
 
 
 def make_transfer_dataset(paths, labels, training=False):
@@ -143,7 +134,7 @@ def train_day7_transfer_learning():
     )
     train_paths, train_labels = train_data
     val_paths, val_labels = val_data
-    test_paths, _ = test_data
+    test_paths, test_labels = test_data
 
     with CLASS_NAMES_PATH.open("r", encoding="utf-8") as file:
         day6_class_names = json.load(file)
@@ -292,143 +283,29 @@ def predict_catalog_image(image_path):
     return class_names[best_index], float(probabilities[best_index])
 
 
-def detect_catalog_images(
-    image_paths,
-    weights=DEFAULT_DETECTOR_WEIGHTS,
-    output_dir=DETECTION_OUTPUT_DIR,
-):
-    """Detect COCO objects and save annotated image copies."""
-    image_paths = [Path(path) for path in image_paths]
-    if not image_paths:
-        raise ValueError("Provide at least one image for object detection.")
-
-    resolved_paths = []
-    for image_path in image_paths:
-        if not image_path.is_absolute():
-            image_path = ROOT / image_path
-        image_path = image_path.resolve()
-        if not image_path.is_file():
-            raise FileNotFoundError(f"Image not found: {image_path}")
-        resolved_paths.append(str(image_path))
-
-    try:
-        from ultralytics import YOLO
-    except ImportError as error:
-        raise ImportError(
-            "Object detection requires Ultralytics. Install project "
-            "dependencies with: python -m pip install -r requirements.txt"
-        ) from error
-
-    output_dir = Path(output_dir)
-    if not output_dir.is_absolute():
-        output_dir = ROOT / output_dir
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    detector = YOLO(weights)
-    detector_names = detector.names
-    named_classes = (
-        detector_names.items()
-        if isinstance(detector_names, dict)
-        else enumerate(detector_names)
-    )
-    product_class_ids = [
-        class_id
-        for class_id, class_name in named_classes
-        if class_name.lower() in DETECTOR_PRODUCT_CLASSES
-    ]
-    if not product_class_ids:
-        raise ValueError(
-            "The selected YOLO model does not include any supported "
-            f"product classes: {sorted(DETECTOR_PRODUCT_CLASSES)}"
-        )
-    results = detector.predict(
-        source=resolved_paths,
-        save=True,
-        classes=product_class_ids,
-        project=str(output_dir.parent),
-        name=output_dir.name,
-        exist_ok=True,
-    )
-    for result in results:
-        detected_count = len(result.boxes) if result.boxes is not None else 0
-        print(f"{Path(result.path).name}: {detected_count} objects detected")
-    print(f"Saved annotated images to: {output_dir}")
-    return results
-
-
 def run_classifier_training():
     """Train and evaluate the ResNet50 classifier against the Day 6 CNN."""
     return train_day7_transfer_learning()
 
 
-def run_object_detection(image_paths=None):
-    """Run YOLO on supplied images or three sample catalog photos."""
-    if image_paths is None:
-        image_dir = ROOT / "data" / "fashion-product-images-small" / "images"
-        if not image_dir.is_dir():
-            image_dir = (
-                ROOT
-                / "data"
-                / "fashion-product-images-small"
-                / "myntradataset"
-                / "images"
-            )
-        if not image_dir.is_dir():
-            raise FileNotFoundError(
-                "Product photo folder not found. Expected "
-                f"{ROOT / 'data' / 'fashion-product-images-small' / 'images'} "
-                "or the myntradataset/images folder."
-            )
-        image_paths = sorted(image_dir.glob("*.jpg"))[:3]
-        if not image_paths:
-            raise FileNotFoundError(f"No JPG product photos found in {image_dir}")
-    return detect_catalog_images(image_paths)
-
-
 def main():
     parser = argparse.ArgumentParser(
         description=(
-            "Train the Day 7 classifier, classify one image, or detect "
-            "objects with pretrained YOLO."
+            "Train the Day 7 transfer-learning classifier or predict "
+            "a product image's master category."
         )
     )
-    action = parser.add_mutually_exclusive_group()
-    action.add_argument(
+    parser.add_argument(
         "--classify",
         metavar="IMAGE",
         help="Predict the master category of one product image.",
-    )
-    action.add_argument(
-        "--detect",
-        nargs="+",
-        metavar="IMAGE",
-        help="Detect and locate COCO objects in one or more images.",
-    )
-    parser.add_argument(
-        "--detector-weights",
-        default=DEFAULT_DETECTOR_WEIGHTS,
-        help=f"Ultralytics model weights (default: {DEFAULT_DETECTOR_WEIGHTS}).",
-    )
-    parser.add_argument(
-        "--detection-output-dir",
-        type=Path,
-        default=DETECTION_OUTPUT_DIR,
-        help="Folder for annotated detection images.",
     )
     args = parser.parse_args()
 
     if args.classify:
         predict_catalog_image(args.classify)
-    elif args.detect:
-        detect_catalog_images(
-            args.detect,
-            weights=args.detector_weights,
-            output_dir=args.detection_output_dir,
-        )
     else:
-        # Comment out either call to run only the other task.
         run_classifier_training()
-        run_object_detection()
 
 
 if __name__ == "__main__":
