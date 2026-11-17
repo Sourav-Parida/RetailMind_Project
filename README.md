@@ -10,14 +10,16 @@ machine-learning feature to the same project.
   tune them, then add useful customer features.
 - **Phase 2 — Day 5: Neural network for churn.** Try a Keras neural network
   and compare it with the Day 4 model.
-- **Phase 3 — Days 6–8: Product photos.** Classify clothing photos, improve
-  classification with ResNet50 transfer learning, then use Grad-CAM to
-  visualize which image regions influenced a prediction.
+- **Phase 3 — Days 6–8: Product photos.** Classify catalog photos with a
+  CNN, improve classification with ResNet50, then explain predictions with
+  Grad-CAM.
 - **Phase 4 — Days 9–10: Demand forecasting.** Forecast next-day sales with
   an LSTM, then use attention for multi-day planning.
-- **Phase 5 — Day 12: Text intelligence.** Fine-tune a pretrained
+- **Phase 5 — Day 11: Vision augmentation.** Generate candidate images for
+  the underrepresented Free Items category and evaluate approved images.
+- **Phase 6 — Day 12: Text intelligence.** Fine-tune a pretrained
   Transformers model for review sentiment and review-derived ticket routing.
-- **Phase 6 — Day 13: Classical text baseline.** Use NLTK and TF-IDF Logistic
+- **Phase 7 — Day 13: Classical text baseline.** Use NLTK and TF-IDF Logistic
   Regression as a reference for the Day 12 BERT sentiment model.
 
 ### Results at a glance
@@ -39,6 +41,7 @@ forecasting uses error measures instead of classification accuracy.
 | 8 | Explainable vision — Grad-CAM | Highlights image regions that influenced the Day 7 category prediction. | No new accuracy score |
 | 9 | Demand forecasting — LSTM | Uses 28 days of sales to forecast next-day store-item demand. | **MAE 6.70 / RMSE 8.83 sales** |
 | 10 | Multi-horizon demand — Seq2Seq + attention | Forecasts 7 days and compares its first-day prediction with Day 9. | **7-day MAE 8.72 / RMSE 11.57 sales** |
+| 11 | Vision augmentation — VAE | Generates candidates for a rare category; only visually approved samples enter training. | Candidates were too blurry; none approved, so no classifier lift is claimed |
 | 12 | Text intelligence — BERT-family model | Fine-tunes a pretrained model for review sentiment and ticket routing. | **91.67% accuracy** (separate split from baseline) |
 | 13 | Review analytics — TF-IDF + Logistic Regression | Classifies review sentiment and surfaces terms associated with each class. | **87.33% accuracy** |
 
@@ -88,8 +91,8 @@ data\fashion-product-images-small\
 
 The loader also accepts a `myntradataset\` subfolder. Day 7 downloads
 ResNet50's pretrained weights the first time it runs. Day 8 uses the saved
-Day 7 model. Product photos and downloaded model weights are not included in
-the repository.
+Day 7 model. Day 11 uses the same catalog and saved Day 7 model. Product
+photos and downloaded model weights are not included in the repository.
 
 ### Sales dataset for Day 9
 
@@ -391,7 +394,45 @@ python src\day10_seq2seq_attention.py --data data\store-item-demand-forecasting\
 
 **Notebook:** `notebooks\RetailMind_Day_10_Seq2Seq_Attention.ipynb`.
 
-## Phase 5 — Day 12: Understand review sentiment and route tickets
+## Phase 5 — Day 11: Augment a rare product-image category
+
+### Day 11 — VAE image augmentation
+
+**In brief:** Train a convolutional VAE on the training split of the rare
+`Free Items` class. Its largest article subtype, `Free Gifts`, provides a
+subset for learning a generator.
+
+**What it does:** Day 6's saved confusion matrix shows zero correct
+predictions for `Free Items` and `Sporting Goods`; the catalog has 105
+`Free Items` images versus thousands for the common categories. The VAE
+trains only on the `Free Gifts` subset of the training split, keeping the
+classifier's validation and test images out of generator training.
+
+Generate candidate samples:
+
+```powershell
+python src\day11_vae_augmentation.py --generate
+```
+
+Inspect `reports\day11_vae_candidates.png` for realism and diversity. Copy
+only realistic candidate JPEGs into
+`data\fashion-product-images-small\day11_synthetic_free_items\approved\`.
+Then fine-tune the saved Day 7 classifier and compare per-class results on
+the unchanged Day 6 test split:
+
+```powershell
+python src\day11_vae_augmentation.py --evaluate
+```
+
+The generated candidates were visibly blurry and lacked realistic product
+detail, so none were approved. The classifier comparison was therefore not
+run; no fairness or accuracy lift is claimed. The script will not train with
+unreviewed candidates. It saves VAE training history and candidate diversity;
+baseline/augmented confusion matrices, per-class accuracy, and the augmented
+classifier are produced only after approved images are supplied. Synthetic
+images should not be treated as real customer or product diversity.
+
+## Phase 6 — Day 12: Understand review sentiment and route tickets
 
 ### Day 12 — Fine-tune a Transformers text classifier
 
@@ -432,7 +473,7 @@ Hugging Face Hub.
 `predict_sentiment(text)` or `route_support_ticket(text)` from
 `src.day12_bert_text_intelligence`.
 
-## Phase 6 — Day 13: Preserve the classical review baseline
+## Phase 7 — Day 13: Preserve the classical review baseline
 
 ### Day 13 — Classical sentiment baseline
 

@@ -1,0 +1,2 @@
+category,candidate_count,sampling_method,mean_pairwise_mse
+Free Items,64,small perturbations around training posteriors,0.054242201149463654
