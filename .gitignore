@@ -13,6 +13,8 @@ data/amazon_polarity/
 data/Reviews.csv
 models/*.joblib
 models/*.keras
+models/day12_bert_sentiment/
+models/day12_bert_ticket_router/
 models/day6_catalog_article_type_confusion_matrix.csv
 models/day6_master_category_confusion_matrix.csv
 models/day9_demand_forecaster_metadata.json

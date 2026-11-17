@@ -15,8 +15,10 @@ machine-learning feature to the same project.
   visualize which image regions influenced a prediction.
 - **Phase 4 — Days 9–10: Demand forecasting.** Forecast next-day sales with
   an LSTM, then use attention for multi-day planning.
-- **Phase 5 — Day 13: Review sentiment.** Use NLTK text cleaning and a
-  TF-IDF Logistic Regression model to find positive and negative review themes.
+- **Phase 5 — Day 12: Text intelligence.** Fine-tune a pretrained
+  Transformers model for review sentiment and review-derived ticket routing.
+- **Phase 6 — Day 13: Classical text baseline.** Use NLTK and TF-IDF Logistic
+  Regression as a reference for the Day 12 BERT sentiment model.
 
 ### Results at a glance
 
@@ -37,6 +39,7 @@ forecasting uses error measures instead of classification accuracy.
 | 8 | Explainable vision — Grad-CAM | Highlights image regions that influenced the Day 7 category prediction. | No new accuracy score |
 | 9 | Demand forecasting — LSTM | Uses 28 days of sales to forecast next-day store-item demand. | **MAE 6.70 / RMSE 8.83 sales** |
 | 10 | Multi-horizon demand — Seq2Seq + attention | Forecasts 7 days and compares its first-day prediction with Day 9. | **7-day MAE 8.72 / RMSE 11.57 sales** |
+| 12 | Text intelligence — BERT-family model | Fine-tunes a pretrained model for review sentiment and ticket routing. | **91.67% accuracy** (separate split from baseline) |
 | 13 | Review analytics — TF-IDF + Logistic Regression | Classifies review sentiment and surfaces terms associated with each class. | **87.33% accuracy** |
 
 Day 2's Random Forest had higher accuracy (**78.14%**) than the selected SVM,
@@ -103,7 +106,7 @@ The loader recognizes the expected date, store, and sales columns for either
 dataset. To use a different file location, change `DATA_CSV` near the top of
 `src\day9_demand_forecasting.py`.
 
-### Amazon reviews for Day 13
+### Amazon reviews for Days 12–13
 
 Download [Amazon Polarity](https://huggingface.co/datasets/amazon_polarity)
 or use a Kaggle review CSV. Amazon Polarity CSVs with or without a header are
@@ -112,6 +115,11 @@ also accepts named Kaggle columns such as `Score,Summary,Text`. Save it as
 `data\amazon-reviews\train.csv` or pass its path with `--data`. The script
 trains on a balanced sample of up to 3,000 reviews per sentiment to keep
 training manageable.
+
+The Day 12 BERT module uses the same review CSV and downloads its pretrained
+model and tokenizer the first time it runs. The support-ticket categories are
+weak labels generated from review keywords for a routing demonstration; they
+are not a substitute for labeled support-ticket data.
 
 ## Phase 1 — Days 1–4: Build customer-churn models
 
@@ -383,7 +391,48 @@ python src\day10_seq2seq_attention.py --data data\store-item-demand-forecasting\
 
 **Notebook:** `notebooks\RetailMind_Day_10_Seq2Seq_Attention.ipynb`.
 
-## Phase 5 — Day 13: Analyze product reviews
+## Phase 5 — Day 12: Understand review sentiment and route tickets
+
+### Day 12 — Fine-tune a Transformers text classifier
+
+**In brief:** Fine-tune a pretrained DistilBERT model for review sentiment
+and a second classifier for review-derived support-ticket categories.
+
+**What it does:** Uses the Day 13 TF-IDF baseline's saved metrics as a
+reference, evaluates BERT with per-class precision, recall, and F1, and
+exports a comparison report. Ticket categories are assigned by transparent
+keyword rules over reviews, so their scores are a weak-label demonstration,
+not an evaluation on real support tickets. The completed CPU run reached
+**91.67% sentiment accuracy** versus the Day 13 baseline's **87.33%**; these
+are separate holdouts, so the 4.34-point difference is indicative, not a
+controlled same-example comparison. The review-derived router reached
+**33.65% accuracy** and is not ready for real ticket routing.
+
+Run the Day 13 baseline first so the comparison metrics are available:
+
+```powershell
+python src\day13_review_sentiment.py
+```
+
+Then train both Day 12 models:
+
+```powershell
+python src\day12_bert_text_intelligence.py
+```
+
+The default model is `distilbert-base-uncased`, trained for one epoch. Use
+`--max-per-class`, `--ticket-max-per-class`, `--epochs`, or `--model-name` to
+adjust training. The first run downloads the pretrained weights from the
+Hugging Face Hub.
+
+**Outputs:** `models\day12_bert_sentiment\`,
+`models\day12_bert_ticket_router\`, `reports\day12_bert_metrics.csv`,
+`reports\day12_ticket_routing_metrics.csv`, and
+`reports\day12_bert_comparison.csv`. For inference, use
+`predict_sentiment(text)` or `route_support_ticket(text)` from
+`src.day12_bert_text_intelligence`.
+
+## Phase 6 — Day 13: Preserve the classical review baseline
 
 ### Day 13 — Classical sentiment baseline
 
