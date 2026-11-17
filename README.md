@@ -15,6 +15,8 @@ machine-learning feature to the same project.
   visualize which image regions influenced a prediction.
 - **Phase 4 — Days 9–10: Demand forecasting.** Forecast next-day sales with
   an LSTM, then use attention for multi-day planning.
+- **Phase 5 — Day 13: Review sentiment.** Use NLTK text cleaning and a
+  TF-IDF Logistic Regression model to find positive and negative review themes.
 
 ### Results at a glance
 
@@ -35,6 +37,7 @@ forecasting uses error measures instead of classification accuracy.
 | 8 | Explainable vision — Grad-CAM | Highlights image regions that influenced the Day 7 category prediction. | No new accuracy score |
 | 9 | Demand forecasting — LSTM | Uses 28 days of sales to forecast next-day store-item demand. | **MAE 6.70 / RMSE 8.83 sales** |
 | 10 | Multi-horizon demand — Seq2Seq + attention | Forecasts 7 days and compares its first-day prediction with Day 9. | **7-day MAE 8.72 / RMSE 11.57 sales** |
+| 13 | Review analytics — TF-IDF + Logistic Regression | Classifies review sentiment and surfaces terms associated with each class. | **87.33% accuracy** |
 
 Day 2's Random Forest had higher accuracy (**78.14%**) than the selected SVM,
 but the SVM was selected because its cross-validation recall was higher. For
@@ -99,6 +102,16 @@ data\store-item-demand-forecasting\train.csv
 The loader recognizes the expected date, store, and sales columns for either
 dataset. To use a different file location, change `DATA_CSV` near the top of
 `src\day9_demand_forecasting.py`.
+
+### Amazon reviews for Day 13
+
+Download [Amazon Polarity](https://huggingface.co/datasets/amazon_polarity)
+or use a Kaggle review CSV. Amazon Polarity CSVs with or without a header are
+supported; headerless rows should contain `label,title,content`. The loader
+also accepts named Kaggle columns such as `Score,Summary,Text`. Save it as
+`data\amazon-reviews\train.csv` or pass its path with `--data`. The script
+trains on a balanced sample of up to 3,000 reviews per sentiment to keep
+training manageable.
 
 ## Phase 1 — Days 1–4: Build customer-churn models
 
@@ -369,6 +382,47 @@ python src\day10_seq2seq_attention.py --data data\store-item-demand-forecasting\
 `reports\day10_attention.svg`.
 
 **Notebook:** `notebooks\RetailMind_Day_10_Seq2Seq_Attention.ipynb`.
+
+## Phase 5 — Day 13: Analyze product reviews
+
+### Day 13 — Classical sentiment baseline
+
+**In brief:** Clean review text, represent it with TF-IDF, and classify it
+as positive or negative with Logistic Regression.
+
+**What it does:** Uses NLTK to lowercase and tokenize reviews, removes
+English stopwords while retaining negation terms, and trains a classical
+sentiment model. It reports held-out accuracy and precision/recall, and
+exports the terms with the strongest positive and negative model weights.
+The default balanced sample is capped at 3,000 reviews per class. On the
+provided Amazon Polarity training CSV, the saved 80/20 split reached
+**87.33% accuracy**.
+
+Download or prepare a review CSV with labels and review text. Install the
+NLTK stopwords once:
+
+```powershell
+python -c "import nltk; nltk.download('stopwords')"
+```
+
+**Run:**
+
+```powershell
+python src\day13_review_sentiment.py
+```
+
+For a different CSV path or sample size:
+
+```powershell
+python src\day13_review_sentiment.py --data path\to\reviews.csv --max-per-class 3000
+```
+
+**Outputs:** `models\day13_review_sentiment.joblib`,
+`reports\day13_review_metrics.csv`, and
+`reports\day13_informative_terms.csv`. The module also provides
+`predict_reviews()` for scoring new review text after training.
+
+**Notebook:** `notebooks\RetailMind_Day_13_Review_Sentiment.ipynb`.
 
 ## Run the full customer-churn workflow
 

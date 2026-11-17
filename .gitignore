@@ -8,6 +8,9 @@ data/WA_Fn-UseC_-Telco-Customer-Churn.csv
 data/telco_customer_churn.csv
 data/fashion-product-images-small/
 data/.kagglehub/
+data/amazon-reviews/
+data/amazon_polarity/
+data/Reviews.csv
 models/*.joblib
 models/*.keras
 models/day6_catalog_article_type_confusion_matrix.csv
