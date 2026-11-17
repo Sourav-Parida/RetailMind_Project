@@ -1,0 +1,2 @@
+dataset,series_count,test_windows,horizon_days,day9_one_day_mae,day10_one_day_mae,day10_all_horizons_mae,day10_all_horizons_rmse
+store-item-demand-forecasting,24,8640,7,6.6249721326209885,9.105703175730175,8.724121414795123,11.573837211205321

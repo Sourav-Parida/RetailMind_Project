@@ -1,0 +1,41 @@
+sentiment,term,coefficient
+positive,great,6.341216756531266
+positive,excellent,3.943307925643778
+positive,good,3.4230051604123877
+positive,love,3.3784661665314353
+positive,best,3.103353563281955
+positive,easy,2.6452017246637034
+positive,perfect,2.3256714082822727
+positive,must,2.2949247722147637
+positive,well,2.262721512599484
+positive,wonderful,2.0762791583337092
+positive,amazing,1.953105188237573
+positive,works,1.8687381923513142
+positive,awesome,1.8375655026359854
+positive,recommend,1.8318042860468944
+positive,loved,1.7537488962813628
+positive,highly,1.7497038381061831
+positive,favorite,1.6744426908761074
+positive,loves,1.6629123497056073
+positive,one best,1.585542793305616
+positive,comfortable,1.458417993259453
+negative,not,-6.046767712663557
+negative,bad,-3.8176456575593636
+negative,boring,-3.623548421188934
+negative,waste,-3.292664543311193
+negative,disappointed,-3.2490014950114765
+negative,worst,-2.9875328708342055
+negative,poor,-2.937548052326995
+negative,money,-2.7929891700993035
+negative,disappointing,-2.3974004842547396
+negative,horrible,-2.2158117033527276
+negative,no,-2.204971191533692
+negative,nothing,-2.1347118826817493
+negative,terrible,-2.0350780088095384
+negative,return,-1.9805762446253072
+negative,waste money,-1.903544155872348
+negative,would not,-1.8463954472200006
+negative,would,-1.8254579946770497
+negative,version,-1.8101975901612473
+negative,buy,-1.7393652689868795
+negative,not worth,-1.6858595611061038
