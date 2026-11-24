@@ -574,6 +574,9 @@ Hugging Face Hub. Use `--output` to choose a different summary JSON path.
 No numeric quality score is claimed; review summarization and API responses
 require human review before customer-facing use.
 
+**Notebook:** `notebooks\RetailMind_Day_14_LLM_Assistant.ipynb`. Chat API
+requests are opt-in in the notebook.
+
 ## Phase 9 — Day 15: Generate marketing imagery with diffusion
 
 ### Day 15 — Stable Diffusion creative module
@@ -613,6 +616,9 @@ accuracy, brand fit, and licensing before campaign use.
 and a matching JSON settings file. The reusable `build_marketing_prompt()`
 and `generate_marketing_image()` functions are available from
 `src.day15_marketing_imagery`.
+
+**Notebook:** `notebooks\RetailMind_Day_15_Marketing_Imagery.ipynb`. Image
+generation is opt-in in the notebook.
 
 ## Run the full customer-churn workflow
 
