@@ -17,6 +17,7 @@ models/day12_bert_sentiment/
 models/day12_bert_ticket_router/
 models/day11_free_items_vae/
 models/day11_day7_resnet50_augmented.keras
+models/day17_clip_catalog/
 models/day6_catalog_article_type_confusion_matrix.csv
 models/day6_master_category_confusion_matrix.csv
 models/day9_demand_forecaster_metadata.json
@@ -27,3 +28,4 @@ models/*_classes.json
 # reports/day8_gradcam/
 # reports/day9_demand_forecast.svg
 # reports/day10_attention.svg
+reports/day17_voice_reply.wav

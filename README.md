@@ -30,6 +30,9 @@ machine-learning feature to the same project.
 - **Phase 10 — Day 16: Product image variations and promo clip.** Create
   catalog-grounded img2img variations, benchmark strength/guidance settings,
   and crossfade selected frames into a short campaign video.
+- **Phase 11 — Day 17: Voice support and multimodal search.** Speak support
+  replies with Hugging Face TTS and search the catalog by text or image with
+  CLIP's shared embedding space.
 
 ### Results at a glance
 
@@ -58,6 +61,7 @@ accuracy does not apply.
 | 14 | LLM assistant — Review summaries + grounded support chatbot | Condenses review themes and answers customer questions from supplied product and policy information. | No benchmark saved |
 | 15 | Creative studio — Stable Diffusion marketing imagery | Creates repeatable product campaign images from category, style, setting, and brand direction. | **Not run:** PyTorch/Diffusers unavailable in this environment; accuracy is not applicable. Runtime/dimensions are recorded when run. |
 | 16 | Creative variations — img2img + promo clip | Sweeps fidelity/creativity settings and assembles selected outputs into a short video. | **Not run:** PyTorch/Diffusers unavailable in this environment; accuracy is not applicable. Runtime/pixel diagnostics are recorded when run. |
+| 17 | Voice + multimodal search — TTS and CLIP | Speaks support replies and retrieves product photos from text or query images. | **Not run:** PyTorch/Transformers unavailable in this environment; retrieval needs relevance labels for an accuracy benchmark. Index build time is recorded when run. |
 
 Day 2's Random Forest had higher accuracy (**78.14%**) than the selected SVM,
 but the SVM was selected because its cross-validation recall was higher. For
@@ -682,6 +686,60 @@ weights from Hugging Face.
 **Notebook:** `notebooks\RetailMind_Day_16_Image_Variations_Video.ipynb`.
 Generation is opt-in; the notebook displays the strength/guidance benchmark
 after a run.
+
+## Phase 11 — Day 17: Add voice replies and multimodal product search
+
+### Day 17 — TTS voice and CLIP search
+
+**In brief:** Add spoken customer-support replies and search the fashion
+catalog by natural-language description or a query image.
+
+**What it does:** Encodes each catalog photo and its product metadata with
+`openai/clip-vit-base-patch32` into a shared vector space. Text and image
+search rank candidate products by cosine similarity across image and metadata
+embeddings. `facebook/mms-tts-eng` converts support replies to WAV audio. The
+`VoiceSupportAssistant` wrapper can speak answers from the Day 14 support
+assistant. CLIP similarity is a ranking score, not a calibrated probability;
+retrieval accuracy needs labeled relevance judgments. The index report records
+the model, device, indexed item count, embedding dimensions, and build time.
+
+Build a small index first (remove `--limit` to index the full catalog):
+
+```powershell
+python -m src.day17_voice_multimodal_search build-index --limit 500
+```
+
+Search by description or image:
+
+```powershell
+python -m src.day17_voice_multimodal_search search-text --query "navy blue casual shirt for men"
+python -m src.day17_voice_multimodal_search search-image --image data\fashion-product-images-small\images\10000.jpg
+```
+
+Speak a supplied response without an external LLM API:
+
+```powershell
+python -m src.day17_voice_multimodal_search speak --text "Your order is on its way."
+```
+
+To speak a live Day 14 support response, configure `OPENAI_API_KEY` and add
+your product/policy knowledge file:
+
+```powershell
+$env:OPENAI_API_KEY = "your-api-key"
+python -m src.day17_voice_multimodal_search speak-reply `
+  --question "What is the tote made from?" `
+  --knowledge data\product_policy.txt
+```
+
+The CLIP cache is saved under `models\day17_clip_catalog\` and ignored by
+Git. The default voice WAV is `reports\day17_voice_reply.wav`; the first run
+downloads both Hugging Face checkpoints. CUDA is used when available; a full
+44k-photo index or TTS generation can be slow on CPU. Day 17 was not benchmarked
+in this environment because PyTorch and Transformers are unavailable.
+
+**Notebook:** `notebooks\RetailMind_Day_17_Voice_Multimodal_Search.ipynb`.
+Index creation, search, and speech generation are opt-in.
 
 ## Run the full customer-churn workflow
 
