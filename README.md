@@ -33,9 +33,11 @@ machine-learning feature to the same project.
 
 ### Results at a glance
 
-These are the test results saved in the project's `reports\` files. Accuracy
-is the percentage of held-out test examples classified correctly. Demand
-forecasting uses error measures instead of classification accuracy.
+These are test results saved in the project's `reports\` files where a
+benchmark has been run. Accuracy is the percentage of held-out test examples
+classified correctly. Demand forecasting uses error measures instead of
+classification accuracy. Image generation is a creative task, so classification
+accuracy does not apply.
 
 | Day | Topic / task | One-line explanation | Accuracy / result |
 |---:|---|---|---:|
@@ -54,8 +56,8 @@ forecasting uses error measures instead of classification accuracy.
 | 12 | Text intelligence — BERT-family model | Fine-tunes a pretrained model for review sentiment and ticket routing. | **91.67% accuracy** (separate split from baseline) |
 | 13 | Review analytics — TF-IDF + Logistic Regression | Classifies review sentiment and surfaces terms associated with each class. | **87.33% accuracy** |
 | 14 | LLM assistant — Review summaries + grounded support chatbot | Condenses review themes and answers customer questions from supplied product and policy information. | No benchmark saved |
-| 15 | Creative studio — Stable Diffusion marketing imagery | Creates repeatable product campaign images from category, style, setting, and brand direction. | No benchmark saved |
-| 16 | Creative variations — img2img + promo clip | Sweeps fidelity/creativity settings and assembles selected outputs into a short video. | Runtime and pixel similarity diagnostics; no accuracy score |
+| 15 | Creative studio — Stable Diffusion marketing imagery | Creates repeatable product campaign images from category, style, setting, and brand direction. | **Not run:** PyTorch/Diffusers unavailable in this environment; accuracy is not applicable. Runtime/dimensions are recorded when run. |
+| 16 | Creative variations — img2img + promo clip | Sweeps fidelity/creativity settings and assembles selected outputs into a short video. | **Not run:** PyTorch/Diffusers unavailable in this environment; accuracy is not applicable. Runtime/pixel diagnostics are recorded when run. |
 
 Day 2's Random Forest had higher accuracy (**78.14%**) than the selected SVM,
 but the SVM was selected because its cross-validation recall was higher. For
