@@ -21,6 +21,9 @@ machine-learning feature to the same project.
   Transformers model for review sentiment and review-derived ticket routing.
 - **Phase 7 — Day 13: Classical text baseline.** Use NLTK and TF-IDF Logistic
   Regression as a reference for the Day 12 BERT sentiment model.
+- **Phase 8 — Day 14: LLM review summaries and support chatbot.** Summarize
+  review themes with a Transformers summarization pipeline and answer support
+  questions through a history-aware, product-grounded LLM assistant.
 
 ### Results at a glance
 
@@ -44,6 +47,7 @@ forecasting uses error measures instead of classification accuracy.
 | 11 | Vision augmentation — VAE | Generates candidates for a rare category; only visually approved samples enter training. | Candidates were too blurry; none approved, so no classifier lift is claimed |
 | 12 | Text intelligence — BERT-family model | Fine-tunes a pretrained model for review sentiment and ticket routing. | **91.67% accuracy** (separate split from baseline) |
 | 13 | Review analytics — TF-IDF + Logistic Regression | Classifies review sentiment and surfaces terms associated with each class. | **87.33% accuracy** |
+| 14 | LLM assistant — Review summaries + grounded support chatbot | Condenses review themes and answers customer questions from supplied product and policy information. | No benchmark saved |
 
 Day 2's Random Forest had higher accuracy (**78.14%**) than the selected SVM,
 but the SVM was selected because its cross-validation recall was higher. For
@@ -123,6 +127,15 @@ The Day 12 BERT module uses the same review CSV and downloads its pretrained
 model and tokenizer the first time it runs. The support-ticket categories are
 weak labels generated from review keywords for a routing demonstration; they
 are not a substitute for labeled support-ticket data.
+
+### Day 14 review summaries and support knowledge
+
+Day 14 can use the same review CSV. To create summaries for individual
+products, include a `product_id`, `asin`, `product`, or `product_name` column;
+Amazon Polarity does not identify products, so those rows are summarized as
+one group. Put support knowledge such as product descriptions, delivery
+details, and return policies in a UTF-8 text file (for example,
+`data\product_policy.txt`).
 
 ## Phase 1 — Days 1–4: Build customer-churn models
 
@@ -513,6 +526,49 @@ python src\day13_review_sentiment.py --data path\to\reviews.csv --max-per-class 
 `predict_reviews()` for scoring new review text after training.
 
 **Notebook:** `notebooks\RetailMind_Day_13_Review_Sentiment.ipynb`.
+
+## Phase 8 — Day 14: Add LLM review summaries and support chat
+
+### Day 14 — Review theme summaries and grounded support assistant
+
+**In brief:** Summarize grouped product reviews with a Hugging Face
+Transformers summarization pipeline and answer customer questions through an
+OpenAI-compatible LLM API.
+
+**What it does:** Reads review text from a CSV, groups it by product when a
+product identifier is available, and writes theme summaries to JSON. Amazon
+Polarity has no product identifiers, so its reviews form one group unless a
+product-aware CSV is provided. The support assistant keeps recent
+conversation history, uses a short brand voice prompt, and grounds answers in
+the product and policy text supplied by the user. It tells customers when the
+provided information does not answer their question. API keys are read from
+environment variables and are never stored in the repository.
+
+Summarize reviews:
+
+```powershell
+python -m src.day14_llm_assistant summarize --data data\amazon-reviews\train.csv
+```
+
+Start the chatbot (first create a UTF-8 text file containing the product and
+policy details the assistant is allowed to use):
+
+```powershell
+$env:OPENAI_API_KEY = "your-api-key"
+python -m src.day14_llm_assistant chat --knowledge data\product_policy.txt
+```
+
+The default chat model is `gpt-4o-mini`; set `OPENAI_MODEL` or pass `--model`
+to select another model. OpenAI-compatible endpoints can be configured with
+`OPENAI_BASE_URL` or `--base-url`. The default summarizer is
+`sshleifer/distilbart-cnn-12-6`; the first run downloads its model from the
+Hugging Face Hub. Use `--output` to choose a different summary JSON path.
+
+**Outputs:** `reports\day14_review_summaries.json`. The reusable
+`RetailSupportAssistant` and `OpenAIChatClient` are available from
+`src.day14_llm_assistant` for integration into the RetailMind application.
+No numeric quality score is claimed; review summarization and API responses
+require human review before customer-facing use.
 
 ## Run the full customer-churn workflow
 
