@@ -24,6 +24,9 @@ machine-learning feature to the same project.
 - **Phase 8 — Day 14: LLM review summaries and support chatbot.** Summarize
   review themes with a Transformers summarization pipeline and answer support
   questions through a history-aware, product-grounded LLM assistant.
+- **Phase 9 — Day 15: Diffusion marketing imagery.** Generate campaign images
+  from product metadata with a reusable Stable Diffusion pipeline, negative
+  prompts, guidance control, and fixed seeds.
 
 ### Results at a glance
 
@@ -48,6 +51,7 @@ forecasting uses error measures instead of classification accuracy.
 | 12 | Text intelligence — BERT-family model | Fine-tunes a pretrained model for review sentiment and ticket routing. | **91.67% accuracy** (separate split from baseline) |
 | 13 | Review analytics — TF-IDF + Logistic Regression | Classifies review sentiment and surfaces terms associated with each class. | **87.33% accuracy** |
 | 14 | LLM assistant — Review summaries + grounded support chatbot | Condenses review themes and answers customer questions from supplied product and policy information. | No benchmark saved |
+| 15 | Creative studio — Stable Diffusion marketing imagery | Creates repeatable product campaign images from category, style, setting, and brand direction. | No benchmark saved |
 
 Day 2's Random Forest had higher accuracy (**78.14%**) than the selected SVM,
 but the SVM was selected because its cross-validation recall was higher. For
@@ -569,6 +573,46 @@ Hugging Face Hub. Use `--output` to choose a different summary JSON path.
 `src.day14_llm_assistant` for integration into the RetailMind application.
 No numeric quality score is claimed; review summarization and API responses
 require human review before customer-facing use.
+
+## Phase 9 — Day 15: Generate marketing imagery with diffusion
+
+### Day 15 — Stable Diffusion creative module
+
+**In brief:** Generate on-brand product campaign imagery from structured
+catalog metadata using the Hugging Face Diffusers library.
+
+**What it does:** Builds a consistent prompt from product name, category,
+style, setting, and optional brand direction. It offers catalog, lifestyle,
+and seasonal prompt templates, a negative prompt to reduce unwanted content,
+guidance-scale and inference-step controls, and a fixed seed for reproducible
+approved assets. The generated PNG and its prompt/settings JSON are saved
+together under `reports\day15_marketing\` by default.
+
+Install the project's requirements, then generate an image:
+
+```powershell
+python -m pip install -r requirements.txt
+python -m src.day15_marketing_imagery `
+  --product-name "Everyday Tote" `
+  --category "canvas tote bag" `
+  --style "minimal, cheerful, warm colors" `
+  --setting "sunlit city market" `
+  --brand-voice "useful, optimistic, approachable" `
+  --template lifestyle `
+  --seed 42
+```
+
+The default model is `runwayml/stable-diffusion-v1-5`; its weights download
+from Hugging Face on the first run. CUDA is used when available, otherwise
+generation runs on CPU and may take substantially longer. Change the model
+with `--model`, choose a different repeatable seed with `--seed`, and set
+`--output` to select an image path. Review generated assets for product
+accuracy, brand fit, and licensing before campaign use.
+
+**Outputs:** `reports\day15_marketing\<product>_<timestamp>_seed<seed>.png`
+and a matching JSON settings file. The reusable `build_marketing_prompt()`
+and `generate_marketing_image()` functions are available from
+`src.day15_marketing_imagery`.
 
 ## Run the full customer-churn workflow
 

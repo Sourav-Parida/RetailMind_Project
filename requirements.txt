@@ -7,3 +7,4 @@ matplotlib
 ipykernel
 tensorflow==2.18.0
 transformers[torch]>=4.46,<4.50
+diffusers>=0.30,<1.0
