@@ -459,6 +459,8 @@ baseline/augmented confusion matrices, per-class accuracy, and the augmented
 classifier are produced only after approved images are supplied. Synthetic
 images should not be treated as real customer or product diversity.
 
+**Notebook:** `notebooks\RetailMind_Day_11_VAE_Augmentation.ipynb`. The notebook loads the saved training history, candidate-quality report, and contact sheet. Its report-review cells do not retrain the model; fresh training requires TensorFlow.
+
 ## Phase 6 — Day 12: Understand review sentiment and route tickets
 
 ### Day 12 — Fine-tune a Transformers text classifier
@@ -499,6 +501,8 @@ Hugging Face Hub.
 `reports\day12_bert_comparison.csv`. For inference, use
 `predict_sentiment(text)` or `route_support_ticket(text)` from
 `src.day12_bert_text_intelligence`.
+
+**Notebook:** `notebooks\RetailMind_Day_12_BERT_Text_Intelligence.ipynb`. The notebook displays the saved sentiment and ticket-routing evaluation reports. Fresh fine-tuning requires PyTorch and Transformers.
 
 ## Phase 7 — Day 13: Preserve the classical review baseline
 
