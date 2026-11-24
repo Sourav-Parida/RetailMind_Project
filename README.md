@@ -27,6 +27,9 @@ machine-learning feature to the same project.
 - **Phase 9 — Day 15: Diffusion marketing imagery.** Generate campaign images
   from product metadata with a reusable Stable Diffusion pipeline, negative
   prompts, guidance control, and fixed seeds.
+- **Phase 10 — Day 16: Product image variations and promo clip.** Create
+  catalog-grounded img2img variations, benchmark strength/guidance settings,
+  and crossfade selected frames into a short campaign video.
 
 ### Results at a glance
 
@@ -52,6 +55,7 @@ forecasting uses error measures instead of classification accuracy.
 | 13 | Review analytics — TF-IDF + Logistic Regression | Classifies review sentiment and surfaces terms associated with each class. | **87.33% accuracy** |
 | 14 | LLM assistant — Review summaries + grounded support chatbot | Condenses review themes and answers customer questions from supplied product and policy information. | No benchmark saved |
 | 15 | Creative studio — Stable Diffusion marketing imagery | Creates repeatable product campaign images from category, style, setting, and brand direction. | No benchmark saved |
+| 16 | Creative variations — img2img + promo clip | Sweeps fidelity/creativity settings and assembles selected outputs into a short video. | Runtime and pixel similarity diagnostics; no accuracy score |
 
 Day 2's Random Forest had higher accuracy (**78.14%**) than the selected SVM,
 but the SVM was selected because its cross-validation recall was higher. For
@@ -618,7 +622,64 @@ and `generate_marketing_image()` functions are available from
 `src.day15_marketing_imagery`.
 
 **Notebook:** `notebooks\RetailMind_Day_15_Marketing_Imagery.ipynb`. Image
-generation is opt-in in the notebook.
+generation and the guidance-scale runtime benchmark are opt-in in the
+notebook.
+
+Stable Diffusion image generation is a generative task, so classification
+accuracy is not a suitable metric. Each generated asset's metadata records
+actual inference time and image dimensions. To compare runtime at guidance
+scales 5.0, 7.5, and 10.0 in one model session, add this option to the command:
+
+```powershell
+--benchmark-guidance-scales 5,7.5,10
+```
+
+The resulting `reports\day15_marketing\day15_generation_benchmark.csv`
+contains device-specific measurements; no measured runtime is claimed until
+this sweep has run on a target device.
+
+## Phase 10 — Day 16: Create product variations and a promo video
+
+### Day 16 — Img2img campaign assets
+
+**In brief:** Turn a catalog product image into controlled marketing
+variations with img2img, then assemble a short MP4 promo clip.
+
+**What it does:** Loads a pretrained Diffusers image-to-image pipeline,
+retains the catalog image as an initialization reference, and sweeps a
+configurable list of `strength` and `guidance_scale` values. Each run gets a
+reproducible seed and saves its generated image. A CSV records generation
+time plus simple pixel MAE/PSNR comparisons against the source. These pixel
+metrics describe low-level similarity only; they do not measure semantic
+product fidelity or visual quality. The outputs can be reviewed and
+crossfaded into a short promo clip.
+
+```powershell
+python -m src.day16_image_variations_video `
+  --image data\fashion-product-images-small\images\15970.jpg `
+  --product-name "Everyday Tote" `
+  --category "canvas tote bag" `
+  --style "minimal, cheerful, warm colors" `
+  --setting "sunlit city market" `
+  --strengths 0.25,0.45,0.65 `
+  --guidance-scales 6.5,7.5 `
+  --seed 42
+```
+
+The input image must exist in the catalog folder; replace the example filename
+with one present in your dataset. The default checkpoint is
+`runwayml/stable-diffusion-v1-5`. Change `--output-dir`, `--model`, `--steps`,
+or pass `--no-video` to generate only variations and metrics. CUDA is used
+when available; CPU runs can take much longer. The first model use downloads
+weights from Hugging Face.
+
+**Outputs:** `reports\day16_variations\variation_*.png`,
+`day16_variation_benchmark.csv`, `day16_campaign_metadata.json`, and
+`promo_clip.mp4`.
+
+**Notebook:** `notebooks\RetailMind_Day_16_Image_Variations_Video.ipynb`.
+Generation is opt-in; the notebook displays the strength/guidance benchmark
+after a run.
 
 ## Run the full customer-churn workflow
 
